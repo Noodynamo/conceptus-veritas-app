@@ -28,7 +28,10 @@
     "migrations:show": "npx typeorm-ts-node-commonjs migration:show --dataSource=src/db/data-source.ts",
     "migrations:generate": "npx typeorm-ts-node-commonjs migration:generate --dataSource=src/db/data-source.ts",
     "release:start": "node scripts/start-release.js",
-    "release:finish": "node scripts/finish-release.js"
+    "release:finish": "node scripts/finish-release.js",
+    "analytics:docs": "ts-node src/services/analytics/generate-docs.ts",
+    "analytics:migrate": "ts-node src/services/analytics/auto-migrate.ts",
+    "analytics:cli": "ts-node src/services/analytics/schema-cli.ts"
   },
   "dependencies": {
     "@sentry/node": "^7.83.0",
@@ -71,4 +74,4 @@
       "/dist/"
     ]
   }
-} 
+}

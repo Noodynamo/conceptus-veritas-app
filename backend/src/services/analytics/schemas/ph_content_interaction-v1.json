@@ -1,0 +1,116 @@
+{
+  "name": "ph_content_interaction",
+  "version": 1,
+  "description": "Schema for tracking user interactions with content",
+  "changes": "Initial version",
+  "category": "content",
+  "properties": {
+    "userId": {
+      "type": "string",
+      "description": "Unique identifier for the user",
+      "example": "user_12345"
+    },
+    "contentId": {
+      "type": "string",
+      "description": "Unique identifier for the content",
+      "example": "article_789"
+    },
+    "contentType": {
+      "type": "string",
+      "description": "Type of content being interacted with",
+      "enum": ["article", "video", "image", "audio", "quiz", "concept", "path"],
+      "example": "article"
+    },
+    "interactionType": {
+      "type": "string",
+      "description": "Type of interaction",
+      "enum": ["view", "like", "share", "comment", "save", "complete", "rate"],
+      "example": "view"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the interaction occurred",
+      "example": "2023-06-01T15:30:45Z"
+    },
+    "duration": {
+      "type": "number",
+      "description": "Duration of the interaction in seconds (for time-based interactions)",
+      "example": 120
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata about the interaction",
+      "properties": {
+        "scrollDepth": {
+          "type": "number",
+          "description": "How far the user scrolled through the content (percentage)",
+          "example": 75
+        },
+        "rating": {
+          "type": "number",
+          "description": "User rating (1-5)",
+          "example": 4
+        },
+        "commentText": {
+          "type": "string",
+          "description": "Text of a comment (if interaction type is comment)",
+          "example": "Great article!"
+        },
+        "sharedTo": {
+          "type": "string",
+          "description": "Platform where content was shared (if interaction type is share)",
+          "example": "twitter"
+        }
+      }
+    },
+    "source": {
+      "type": "string",
+      "description": "Source of the content interaction",
+      "example": "feed"
+    },
+    "context": {
+      "type": "object",
+      "description": "Contextual information about the interaction",
+      "properties": {
+        "page": {
+          "type": "string",
+          "description": "Page where the interaction occurred",
+          "example": "home"
+        },
+        "section": {
+          "type": "string",
+          "description": "Section of the app where the interaction occurred",
+          "example": "recommended"
+        },
+        "referrer": {
+          "type": "string",
+          "description": "How the user arrived at the content",
+          "example": "search"
+        }
+      }
+    },
+    "device_info": {
+      "type": "object",
+      "description": "Information about the user's device",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Device type (mobile, tablet, desktop)",
+          "example": "mobile"
+        },
+        "os": {
+          "type": "string",
+          "description": "Operating system",
+          "example": "iOS 15.4"
+        },
+        "browser": {
+          "type": "string",
+          "description": "Browser information",
+          "example": "Safari 15.4"
+        }
+      }
+    }
+  },
+  "required": ["userId", "contentId", "contentType", "interactionType", "timestamp"]
+}

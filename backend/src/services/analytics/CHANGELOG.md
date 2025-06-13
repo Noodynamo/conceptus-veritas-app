@@ -5,6 +5,16 @@ All notable changes to the analytics tracking schema and configuration will be d
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2024-07-15
+
+### Added
+
+- New event schema: `ph_user_signup` for tracking user registration events
+- New event schema: `ph_content_interaction` for tracking content engagement
+- Documentation generation script for automatically creating schema documentation
+- Auto-migration script for automatically applying migrations when schema versions change
+- Schema versioning system for handling schema evolution and backward compatibility
+
 ## [1.0.0] - 2024-07-01
 
 ### Added

@@ -1,0 +1,106 @@
+{
+  "name": "ph_user_signup",
+  "version": 1,
+  "description": "Schema for tracking user signup events",
+  "changes": "Initial version",
+  "category": "user",
+  "properties": {
+    "userId": {
+      "type": "string",
+      "description": "Unique identifier for the user",
+      "example": "user_12345"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the signup occurred",
+      "example": "2023-06-01T15:30:45Z"
+    },
+    "method": {
+      "type": "string",
+      "description": "The signup method used",
+      "enum": ["email", "google", "apple", "facebook"],
+      "example": "email"
+    },
+    "referrer": {
+      "type": "string",
+      "description": "Where the user came from",
+      "example": "homepage"
+    },
+    "device_info": {
+      "type": "object",
+      "description": "Information about the user's device",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Device type (mobile, tablet, desktop)",
+          "example": "mobile"
+        },
+        "os": {
+          "type": "string",
+          "description": "Operating system",
+          "example": "iOS 15.4"
+        },
+        "browser": {
+          "type": "string",
+          "description": "Browser information",
+          "example": "Safari 15.4"
+        }
+      }
+    },
+    "initial_preferences": {
+      "type": "object",
+      "description": "User's initial preferences during signup",
+      "properties": {
+        "notifications_enabled": {
+          "type": "boolean",
+          "description": "Whether notifications are enabled",
+          "example": true
+        },
+        "theme": {
+          "type": "string",
+          "description": "User's selected theme",
+          "enum": ["light", "dark", "system"],
+          "example": "system"
+        },
+        "language": {
+          "type": "string",
+          "description": "User's selected language",
+          "example": "en-US"
+        }
+      }
+    },
+    "utm_parameters": {
+      "type": "object",
+      "description": "UTM parameters for tracking marketing campaigns",
+      "properties": {
+        "utm_source": {
+          "type": "string",
+          "description": "The source of the traffic",
+          "example": "google"
+        },
+        "utm_medium": {
+          "type": "string",
+          "description": "The marketing medium",
+          "example": "cpc"
+        },
+        "utm_campaign": {
+          "type": "string",
+          "description": "The specific campaign name",
+          "example": "spring_launch"
+        },
+        "utm_term": {
+          "type": "string",
+          "description": "Keywords associated with the campaign",
+          "example": "ai assistant"
+        },
+        "utm_content": {
+          "type": "string",
+          "description": "Content identifier for A/B testing",
+          "example": "logolink"
+        }
+      }
+    }
+  },
+  "required": ["userId", "timestamp", "method"]
+}

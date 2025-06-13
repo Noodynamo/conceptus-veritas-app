@@ -9,10 +9,13 @@ This directory contains the analytics schema versioning system for the Conceptus
 - **Schema Migration**: Tools for migrating data between schema versions
 - **Change Tracking**: Comprehensive changelog for all schema changes
 - **CLI Tool**: Command-line interface for managing schemas and migrations
+- **Documentation Generator**: Automatic documentation generation for schemas
+- **Auto-Migration**: Automatic migration of schemas when versions change
 
 ## Directory Structure
 
 - `analytics.constants.ts`: Constants including the current analytics version
+- `analytics.service.ts`: Main analytics service for tracking events
 - `schemas/`: JSON schema definitions for different event types and versions
 - `migrations/`: Migration scripts for transforming data between schema versions
 - `schema-registry.json`: Registry of all schema versions and migrations
@@ -20,6 +23,8 @@ This directory contains the analytics schema versioning system for the Conceptus
 - `schema-version-control.ts`: Version control utilities for schemas
 - `schema-migrations.ts`: Schema migration management utilities
 - `schema-cli.ts`: CLI tool for managing schemas and migrations
+- `generate-docs.ts`: Documentation generator for schemas
+- `auto-migrate.ts`: Auto-migration script for schema versions
 - `CHANGELOG.md`: Detailed changelog of analytics schema changes
 
 ## Schema Versioning Guidelines
@@ -30,74 +35,163 @@ The system follows semantic versioning principles:
 - **MINOR**: Non-breaking additions to schemas or new events
 - **PATCH**: Bug fixes or changes that don't affect schema structure
 
-## Using the CLI Tool
+## Getting Started
+
+### Installation
+
+The analytics versioning system is part of the backend service and is installed automatically when you install the backend dependencies.
+
+```bash
+# From the backend directory
+npm install
+```
+
+### Using the CLI Tool
 
 The schema CLI tool provides utilities for managing analytics schemas:
 
 ```bash
 # List all registered schemas and versions
-npx ts-node schema-cli.ts list
+npm run analytics:cli list
 
 # Scan the schemas directory and update the registry
-npx ts-node schema-cli.ts scan
+npm run analytics:cli scan
 
 # Create a new schema interactively
-npx ts-node schema-cli.ts create
+npm run analytics:cli create
 
 # Create a migration between schema versions
-npx ts-node schema-cli.ts migrate
+npm run analytics:cli migrate
 
 # Show schema migration history
-npx ts-node schema-cli.ts history
-
-# Export schema registry to file
-npx ts-node schema-cli.ts export -o registry.json
-
-# Import schema registry from file
-npx ts-node schema-cli.ts import -i registry.json
+npm run analytics:cli history
 ```
 
-## Adding a New Schema
+### Generating Documentation
 
-1. Create a new schema JSON file in the `schemas/` directory with the naming convention `[schema-name]-v1.json`
-2. Define the schema properties, including name, version, description, and property definitions
-3. Register the schema using the CLI tool: `npx ts-node schema-cli.ts scan`
+To generate documentation for all schemas:
+
+```bash
+npm run analytics:docs
+```
+
+This will create Markdown documentation in the `docs/analytics/schemas` directory.
+
+### Auto-Migration
+
+To automatically apply migrations when schema versions change:
+
+```bash
+npm run analytics:migrate
+```
+
+## Creating a New Schema
+
+1. Create a new schema file in the `schemas` directory:
+
+```json
+{
+  "name": "ph_event_name",
+  "version": 1,
+  "description": "Schema for tracking...",
+  "changes": "Initial version",
+  "category": "user",
+  "properties": {
+    "userId": {
+      "type": "string",
+      "description": "Unique identifier for the user",
+      "example": "user_12345"
+    }
+    // Add more properties as needed
+  },
+  "required": ["userId"]
+}
+```
+
+2. Update the schema registry:
+
+```bash
+npm run analytics:cli scan
+```
 
 ## Creating a Schema Migration
 
-When a schema needs to change:
+When you need to update a schema:
 
-1. Create a new version of the schema JSON file in the `schemas/` directory with the naming convention `[schema-name]-v[version].json`
-2. Use the CLI tool to create a migration script: `npx ts-node schema-cli.ts migrate`
-3. Select the schema to migrate, the source version, target version, and provide a description
-4. Define the migration logic to transform data from the old schema to the new schema
-5. Test the migration by loading and transforming sample data
+1. Create a new version of the schema file in the `schemas` directory
+2. Use the CLI to create a migration script:
 
-## Schema Migration Best Practices
+```bash
+npm run analytics:cli migrate
+```
 
-- Always provide backward compatibility for non-breaking changes
-- Document all changes in the CHANGELOG.md file
-- Include clear descriptions of changes in migration scripts
-- Test migrations thoroughly with representative data
-- Flag breaking changes appropriately to ensure downstream systems are updated
+3. Follow the interactive prompts to create the migration
+4. Update the schema registry:
 
-## Schema Registry Structure
+```bash
+npm run analytics:cli scan
+```
 
-The schema registry maintains the following information:
+## Using the Analytics Service
 
-- All schema versions for each schema name
-- Latest version for each schema
-- Migration history including:
-  - Source and target versions
-  - Migration date
-  - Change descriptions
-  - Breaking change flags
+To track events in the application:
 
-## Integration with Analytics Service
+```typescript
+import { analyticsService } from 'src/services/analytics';
 
-The analytics service uses the schema registry to:
+// Track an event
+analyticsService.track(
+  'ph_user_signup',
+  {
+    method: 'email',
+    referrer: 'homepage',
+  },
+  'user-123', // distinctId
+  { org: 'org-456' } // optional groups
+);
+```
 
-1. Validate incoming events against the appropriate schema version
-2. Transform data between schema versions when needed
-3. Track schema versions used for events
-4. Ensure consistent analytics data structure across the application
+## Best Practices
+
+1. **Naming Conventions**:
+
+   - All event names should be prefixed with `ph_`
+   - Use kebab-case for event names (e.g., `ph_user-signup`)
+   - Use descriptive names that indicate the action being tracked
+
+2. **Schema Design**:
+
+   - Include a `userId` property in all user-related events
+   - Include a `timestamp` property in all events
+   - Use consistent property names across schemas
+   - Document all properties with descriptions and examples
+
+3. **Versioning**:
+
+   - Increment the version number in `analytics.constants.ts` when making changes
+   - Document all changes in `CHANGELOG.md`
+   - Create migration scripts for breaking changes
+   - Test migrations thoroughly before deploying
+
+4. **Privacy**:
+   - Never include PII (Personally Identifiable Information) in events
+   - Use pseudonymous identifiers instead of personal information
+   - Follow data minimization principles
+
+## Database Schema
+
+The analytics schema is tracked in three database tables:
+
+1. **analytics_schema_versions**: Records each schema version
+2. **analytics_event_schemas**: Stores event schema definitions
+3. **analytics_schema_changes**: Logs all schema changes
+
+## Troubleshooting
+
+If you encounter issues with the analytics versioning system:
+
+1. Check the schema registry file (`schema-registry.json`) for consistency
+2. Ensure all schema files follow the correct naming convention
+3. Verify that migration scripts are correctly implemented
+4. Check the database tables for any inconsistencies
+5. Run the CLI tool with the `scan` command to update the registry
