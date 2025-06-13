@@ -1,0 +1,177 @@
+name: API & Components Master List Alignment Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+    branches:
+      - main
+      - develop
+
+jobs:
+  check-api-components-alignment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install dependencies
+        run: npm install @octokit/rest fs-extra
+
+      - name: Check PR template API & Components section
+        id: check-template
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+
+            const body = pr.body || '';
+
+            // Check if the API & Components section exists and is filled out
+            const apiComponentsSection = body.match(/## API & Components Master List Alignment[\s\S]*?(?=##|$)/);
+
+            if (!apiComponentsSection) {
+              core.setFailed('PR description is missing the "API & Components Master List Alignment" section. Please fill out this section according to the PR template.');
+              return;
+            }
+
+            const sectionContent = apiComponentsSection[0];
+
+            // Check if APIs are referenced
+            const apisSection = sectionContent.match(/### APIs Used\/Modified[\s\S]*?(?=###|$)/);
+            if (!apisSection || !apisSection[0].includes('- [')) {
+              core.setFailed('Please list all API endpoints from the Master List that are used or modified in this PR.');
+              return;
+            }
+
+            // Check if Frontend Components are referenced
+            const frontendSection = sectionContent.match(/### Frontend Components Used\/Modified[\s\S]*?(?=###|$)/);
+            if (!frontendSection || !frontendSection[0].includes('- [')) {
+              core.setFailed('Please list all frontend components from the Master List that are used or modified in this PR.');
+              return;
+            }
+
+            // Check if Backend Components are referenced
+            const backendSection = sectionContent.match(/### Backend Components Used\/Modified[\s\S]*?(?=###|$)/);
+            if (!backendSection || !backendSection[0].includes('- [')) {
+              core.setFailed('Please list all backend components from the Master List that are used or modified in this PR.');
+              return;
+            }
+
+            // Check if new components section is addressed
+            const newComponentsSection = sectionContent.match(/### If any components used are NOT in the Master List[\s\S]*?(?=##|$)/);
+            if (!newComponentsSection || (!newComponentsSection[0].includes('- [x]') && !newComponentsSection[0].includes('N/A'))) {
+              core.setFailed('Please indicate whether you have updated the Master List or why new components are needed.');
+              return;
+            }
+
+            core.info('API & Components Master List alignment check passed.');
+
+      - name: Analyze files and component references
+        id: analyze-files
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+
+            const body = pr.body || '';
+
+            // Extract referenced components from PR description
+            const apiComponentsSection = body.match(/## API & Components Master List Alignment[\s\S]*?(?=##|$)/);
+            if (!apiComponentsSection) {
+              return;
+            }
+
+            const sectionContent = apiComponentsSection[0];
+
+            // Extract API endpoints
+            const apisPattern = /`([^`]+)`/g;
+            const apisSection = sectionContent.match(/### APIs Used\/Modified[\s\S]*?(?=###|$)/);
+            const referencedApis = [];
+            if (apisSection) {
+              let match;
+              while ((match = apisPattern.exec(apisSection[0])) !== null) {
+                referencedApis.push(match[1]);
+              }
+            }
+
+            // Extract frontend components
+            const frontendPattern = /`([^`]+\.tsx?)`/g;
+            const frontendSection = sectionContent.match(/### Frontend Components Used\/Modified[\s\S]*?(?=###|$)/);
+            const referencedFrontendComponents = [];
+            if (frontendSection) {
+              let match;
+              while ((match = frontendPattern.exec(frontendSection[0])) !== null) {
+                referencedFrontendComponents.push(match[1]);
+              }
+            }
+
+            // Extract backend components
+            const backendPattern = /`([^`]+\.py)`/g;
+            const backendSection = sectionContent.match(/### Backend Components Used\/Modified[\s\S]*?(?=###|$)/);
+            const referencedBackendComponents = [];
+            if (backendSection) {
+              let match;
+              while ((match = backendPattern.exec(backendSection[0])) !== null) {
+                referencedBackendComponents.push(match[1]);
+              }
+            }
+
+            // Analyze modified files
+            const warnings = [];
+
+            for (const file of files) {
+              if (file.filename.endsWith('.tsx') || file.filename.endsWith('.ts')) {
+                // Check if frontend component is referenced
+                const componentName = file.filename.split('/').pop();
+                if (!referencedFrontendComponents.some(c => c.includes(componentName))) {
+                  warnings.push(`Modified frontend component '${componentName}' does not appear to be referenced in the PR description.`);
+                }
+              } else if (file.filename.endsWith('.py') && file.filename.includes('services/')) {
+                // Check if backend component is referenced
+                const componentName = file.filename.split('/').pop();
+                if (!referencedBackendComponents.some(c => c.includes(componentName))) {
+                  warnings.push(`Modified backend component '${componentName}' does not appear to be referenced in the PR description.`);
+                }
+              } else if (file.filename.includes('api/v1/') && file.filename.endsWith('.py')) {
+                // Check if API endpoint is referenced
+                warnings.push(`File '${file.filename}' suggests API changes. Please verify all affected endpoints are listed in the PR description.`);
+              }
+            }
+
+            if (warnings.length > 0) {
+              // Add a comment to the PR with the warnings
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `### API & Components Alignment Check Warnings\n\n${warnings.map(w => `- ⚠️ ${w}`).join('\n')}\n\nPlease review and update your PR description to ensure all components are properly referenced.`
+              });
+
+              core.warning('Potential misalignment between changed files and referenced components. See PR comments for details.');
+            } else {
+              core.info('File analysis completed. No alignment issues detected.');
+            }

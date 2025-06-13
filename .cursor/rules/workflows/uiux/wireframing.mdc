@@ -1,0 +1,86 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Cursor Workflow Rule: UI/UX Wireframing Phase
+
+**Goal:**
+Create low-fidelity layouts to define the app's structure and functionality.
+
+---
+
+## Step-by-Step Workflow
+
+### 1. Generate Low-Fidelity Wireframes
+- Create wireframes for key screens (e.g., homepage, user dashboard) based on user flows and sitemap.
+- Include placeholders for content, navigation, and interactive elements (e.g., buttons, forms).
+- Focus on layout, hierarchy, and functionality, avoiding detailed visuals.
+
+### 2. Annotate Wireframes
+- Add notes to clarify interactions (e.g., "Tapping this button opens a modal").
+- Specify content types (e.g., "Image placeholder for product thumbnail").
+
+### 3. Gather and Incorporate Feedback
+- Suggest questions for stakeholder feedback, such as: "Does the layout support key user tasks?" or "Are any critical features missing?"
+- Summarize feedback and propose revisions to address concerns.
+
+### 4. Check Accessibility
+- Ensure wireframes include accessibility considerations, such as logical tab order, sufficient spacing for touch targets, and clear content hierarchy.
+- Flag potential issues (e.g., small touch targets) and suggest fixes.
+
+---
+
+## Rationales
+- Low-fidelity wireframes allow rapid iteration, catching structural issues early without investing in visuals.
+- Annotations clarify intent, reducing miscommunication with stakeholders and developers.
+- Early feedback ensures alignment with project goals, preventing costly revisions later.
+- Accessibility checks ensure the design is inclusive, meeting standards like WCAG 2.1.
+
+---
+
+## Deliverables
+
+### Low-Fidelity Wireframes
+
+#### Screen: Homepage
+- **Layout:**
+  - Header: [Logo, navigation menu]
+  - Body: [Search bar, featured content grid]
+  - Footer: [Quick links, social icons]
+- **Interactions:**
+  - Search bar: Triggers search results screen
+  - Featured content: Tapping opens detail view
+- **Accessibility:**
+  - Tab order: Header → Search → Content → Footer
+  - Touch targets: Minimum 44x44px
+
+#### Screen: User Dashboard
+- [Similar structure as above]
+
+### Feedback Summary
+- **Stakeholder Input:** [e.g., "Add a filter button to homepage"]
+- **Proposed Revisions:** [e.g., Include filter button in search bar]
+
+### Accessibility Notes
+- [e.g., Ensured sufficient spacing for touch targets; recommend high-contrast text for next phase]
+
+---
+
+## Guidance for AI Assistant
+
+- **Proactivity:** Anticipate designer needs by suggesting additional tasks (e.g., "Would you like me to generate more user flow variations?") without overwhelming them.
+- **Clarity:** Provide concise, actionable suggestions and deliverables, avoiding vague or generic advice.
+- **Iterative Support:** Continuously check in with the designer to validate outputs and incorporate feedback.
+- **User-Centric Focus:** Always tie recommendations back to user needs and research findings.
+- **Consistency:** Ensure deliverables align across phases (e.g., wireframes reflect sitemap, mockups reflect prototype).
+- **Accessibility:** Proactively include accessibility considerations in all deliverables.
+
+---
+
+### Conversational Process
+- Only ask one focused question at a time to guide the designer through each step.
+- Wait for confirmation or feedback before proceeding to the next step.
+- Iterate based on feedback, ensuring each deliverable is validated before moving forward.
+
+

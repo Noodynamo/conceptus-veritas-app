@@ -1,0 +1,88 @@
+name: Branch Naming Convention Check
+
+on:
+  create:
+    branches:
+      - '**'
+  pull_request:
+    types: [opened, reopened, edited, synchronize]
+
+jobs:
+  check-branch-name:
+    name: Check Branch Name
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Check branch name
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // For branch creation events
+            if (context.eventName === 'create') {
+              const branchName = context.payload.ref;
+              
+              // Define valid branch name patterns
+              const validPrefixes = ['feature/', 'bugfix/', 'hotfix/', 'refactor/', 'docs/', 'test/'];
+              const validPattern = /^(feature|bugfix|hotfix|refactor|docs|test)\/(\d+)-[a-z0-9][-a-z0-9]*$/;
+              
+              // Check if branch name matches our pattern
+              if (!validPattern.test(branchName)) {
+                const prefixList = validPrefixes.join(', ');
+                
+                throw new Error(`
+                  Invalid branch name: "${branchName}"
+                  
+                  Branch names must follow the pattern: prefix/issue-number-description
+                  
+                  Valid prefixes: ${prefixList}
+                  Examples:
+                  - feature/123-user-authentication
+                  - bugfix/456-fix-password-reset
+                  
+                  Please rename your branch and try again.
+                `);
+              }
+            }
+            
+            // For pull request events
+            if (context.eventName === 'pull_request') {
+              const headRef = context.payload.pull_request.head.ref;
+              
+              // Define valid branch name patterns
+              const validPrefixes = ['feature/', 'bugfix/', 'hotfix/', 'refactor/', 'docs/', 'test/'];
+              const validPattern = /^(feature|bugfix|hotfix|refactor|docs|test)\/(\d+)-[a-z0-9][-a-z0-9]*$/;
+              
+              // Skip for protected branches
+              if (headRef === 'main' || headRef === 'develop' || headRef.startsWith('release/')) {
+                return;
+              }
+              
+              // Check if branch name matches our pattern
+              if (!validPattern.test(headRef)) {
+                const prefixList = validPrefixes.join(', ');
+                
+                await github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: `
+                  ⚠️ **Warning: Non-compliant branch name**
+                  
+                  The branch \`${headRef}\` does not comply with our branch naming convention.
+                  
+                  Branch names must follow the pattern: prefix/issue-number-description
+                  
+                  Valid prefixes: ${prefixList}
+                  Examples:
+                  - feature/123-user-authentication
+                  - bugfix/456-fix-password-reset
+                  
+                  Please consider renaming your branch for future PRs.
+                  `
+                });
+                
+                // We don't fail the check for PR events, just warn
+                console.log(`Warning: Branch name "${headRef}" does not follow the naming convention`);
+              }
+            } 

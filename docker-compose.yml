@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "19000:19000" # Expo
+      - "19001:19001" # Metro
+      - "19002:19002" # Dev tools
+    environment:
+      - NODE_ENV=development
+      - EXPO_DEVTOOLS_LISTEN_ADDRESS=0.0.0.0
+      - REACT_NATIVE_PACKAGER_HOSTNAME=localhost
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./backend:/app
+      - /app/.venv
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=development
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/conceptus_veritas
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: postgres:16-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=conceptus_veritas
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    command: celery -A src.tasks.worker worker --loglevel=info
+    volumes:
+      - ./backend:/app
+      - /app/.venv
+    environment:
+      - ENVIRONMENT=development
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/conceptus_veritas
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - backend
+      - redis
+
+volumes:
+  postgres_data:
+  redis_data: 

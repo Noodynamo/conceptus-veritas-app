@@ -1,0 +1,87 @@
+{
+  "projectName": "Conceptus Veritas",
+  "workspaceFolders": {
+    "C:\\Conceptus Veritas App\\frontend": {
+      "disableAnalysisOfFilePatterns": [
+        "node_modules/**/*",
+        "**/*.test.{js,jsx,ts,tsx}",
+        "**/__tests__/**/*"
+      ]
+    },
+    "C:\\Conceptus Veritas App\\backend": {
+      "disableAnalysisOfFilePatterns": [
+        "node_modules/**/*",
+        "**/*.test.{js,jsx,ts,tsx}",
+        "**/__tests__/**/*"
+      ]
+    }
+  },
+  "rules": {
+    "javascript:S1067": {
+      "level": "on",
+      "parameters": {
+        "max": "3"
+      }
+    },
+    "javascript:S1472": {
+      "level": "on"
+    },
+    "javascript:S1479": {
+      "level": "on",
+      "parameters": {
+        "maximum": "30"
+      }
+    },
+    "javascript:S2589": {
+      "level": "on"
+    },
+    "javascript:S3776": {
+      "level": "on",
+      "parameters": {
+        "threshold": "15"
+      }
+    },
+    "javascript:S4144": {
+      "level": "on"
+    },
+    "typescript:S107": {
+      "level": "on",
+      "parameters": {
+        "maximumFunctionParameters": "7"
+      }
+    },
+    "typescript:S1110": {
+      "level": "on"
+    },
+    "typescript:S1172": {
+      "level": "on"
+    },
+    "typescript:S2201": {
+      "level": "on"
+    },
+    "typescript:S2681": {
+      "level": "on"
+    },
+    "typescript:S2819": {
+      "level": "on"
+    },
+    "typescript:S3353": {
+      "level": "on"
+    },
+    "typescript:S3699": {
+      "level": "on"
+    },
+    "typescript:S3723": {
+      "level": "on"
+    },
+    "typescript:S3984": {
+      "level": "on"
+    },
+    "typescript:S4502": {
+      "level": "on"
+    },
+    "typescript:S6478": {
+      "level": "on"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions & Discussions
+    url: https://github.com/conceptus-veritas/backend/discussions
+    about: Ask questions, share ideas, or discuss improvements
+  - name: Security Vulnerabilities
+    url: mailto:security@conceptusveritas.com
+    about: Critical security vulnerabilities should be reported directly via email
+  - name: Documentation
+    url: https://docs.conceptusveritas.com
+    about: Check our documentation for answers before creating an issue 

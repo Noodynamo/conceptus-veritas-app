@@ -1,0 +1,63 @@
+{
+  "name": "user_interaction_event",
+  "version": 2,
+  "description": "Schema for tracking user interactions with the application",
+  "changes": "Added device_info property",
+  "properties": {
+    "userId": {
+      "type": "string",
+      "description": "Unique identifier for the user",
+      "example": "user_12345"
+    },
+    "action": {
+      "type": "string",
+      "description": "The action performed by the user",
+      "enum": ["click", "view", "scroll", "submit"],
+      "example": "click"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the event occurred",
+      "example": "2023-06-01T15:30:45Z"
+    },
+    "context": {
+      "type": "object",
+      "description": "Additional contextual information",
+      "properties": {
+        "page": {
+          "type": "string",
+          "description": "Page where the event occurred",
+          "example": "profile"
+        },
+        "component": {
+          "type": "string",
+          "description": "UI component involved",
+          "example": "settings_button"
+        }
+      }
+    },
+    "device_info": {
+      "type": "object",
+      "description": "Information about the user's device",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Device type (mobile, tablet, desktop)",
+          "example": "mobile"
+        },
+        "os": {
+          "type": "string",
+          "description": "Operating system",
+          "example": "iOS 15.4"
+        },
+        "browser": {
+          "type": "string",
+          "description": "Browser information",
+          "example": "Safari 15.4"
+        }
+      }
+    }
+  },
+  "required": ["userId", "action", "timestamp"]
+}

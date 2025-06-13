@@ -1,0 +1,77 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Task List Management
+
+Guidelines for managing task lists in markdown files to track progress on completing a PRD
+
+## Task Implementation
+- **One sub-task at a time:** Do **NOT** start the next sub‑task until you ask the user for permission and they say "yes" or "y"
+- **Completion protocol:**  
+  1. When you finish a **sub‑task**, immediately mark it as completed by changing `[ ]` to `[x]`or by marking task complete in dart_mcp for that task  
+  2. If **all** subtasks underneath a parent task are now `[x]`, also mark the **parent task** as completed.  
+- Stop after each sub‑task and wait for the user's go‑ahead.
+
+## Task List Maintenance
+
+1. **Update the task list as you work:**
+   - Mark tasks and subtasks as completed (`[x]`) per the protocol above.
+   - Add new tasks as they emerge.
+
+2. **Maintain the "Relevant Files" section:**
+   - List every file created or modified.
+   - Give each file a one‑line description of its purpose.
+
+## AI Instructions
+
+When working with task lists, the AI must:
+
+1. Regularly update the task list file after finishing any significant work.
+2. Follow the completion protocol:
+   - Mark each finished **sub‑task** `[x]`or complete in dart_mcp.
+   - Mark the **parent task** `[x]` once **all** its subtasks are `[x]`or mark parent task in dart_mcp as complete.
+3. Add newly discovered tasks.
+4. Keep "Relevant Files" accurate and up to date.
+5. Before starting work, check which sub‑task is next.
+6. After implementing a sub‑task, update the file and then pause for user approval.
+
+# Task Completion Process
+
+## Task Status Workflow
+1. Tasks begin with status `⬜` (Pending)
+2. When implementation begins, mark as `🔄` (In Progress)
+3. When implementation is complete and ready for review, mark as `⭕` (Pending Approval)
+4. Only after explicit user approval, mark as `✅` (Completed)
+5. If rejected or issues found, mark as `❌` (Failed)
+6. If more information is needed, mark as `❓` (Needs Clarification)
+
+## Task Completion Protocol
+- Never skip the approval step - all tasks must go through `⭕` status before being marked `✅`
+- Always summarize completed work when marking a task as `⭕` (Pending Approval)
+- Wait for explicit approval before moving to the next task
+- Update TASK.md and Dart MCP to reflect current status
+- Include all details about the implementation in your summary
+- Request feedback clearly when marking a task as `⭕`
+
+## Implementation Guidelines
+- Follow the Project Guidelines document strictly
+- Adhere to code style and architecture decisions
+- Implement full solutions, not just scaffolding
+- Write thorough tests for all implementations
+- Document code according to the Expert Dev Guidelines
+- Use Winston logging appropriately to log all logical connections
+
+## Review Process
+- When requesting review, provide a concise summary of what was implemented
+- Highlight any decisions or trade-offs made during implementation
+- Be prepared to make revisions based on feedback
+- After implementing requested changes, request review again
+- Only consider a task complete after explicit approval
+
+## Task Sequencing
+- Complete tasks in the order they appear in the active task list
+- Do not start a new task until the current one is approved
+- If blocked on a task, explain why and request guidance
+- For complex tasks, break down into subtasks and track progress

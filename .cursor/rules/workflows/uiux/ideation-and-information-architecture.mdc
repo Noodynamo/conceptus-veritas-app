@@ -1,0 +1,94 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Cursor Workflow Rule: UI/UX Ideation and Information Architecture Phase
+
+**Goal:**
+Structure the application's content and functionality to support intuitive user journeys.
+
+---
+
+## Step-by-Step Workflow
+
+### 1. Facilitate Brainstorming
+- Suggest brainstorming prompts based on research, such as: "How can we simplify onboarding for new users?" or "What features address [specific pain point]?"
+- Summarize brainstorming outcomes into a list of potential features or design ideas.
+
+### 2. Map User Flows
+- Create user flow diagrams for key tasks (e.g., signing up, completing a purchase) based on personas and research.
+- Identify entry points, decision points, and exit points for each flow.
+- Highlight potential friction areas (e.g., too many steps) and suggest simplifications.
+
+### 3. Develop Information Architecture
+- Draft a sitemap outlining the app's screens and their hierarchy (e.g., Home > Profile > Settings).
+- Suggest navigation patterns (e.g., tab bar, hamburger menu) based on the app's complexity and platform.
+- Validate the sitemap with the designer to ensure it supports user tasks and business goals.
+
+### 4. Conduct Task Analysis
+- Break down complex user tasks into step-by-step actions (e.g., "Search for product" → "Enter query" → "View results").
+- Suggest optimizations to reduce steps or cognitive load.
+
+---
+
+## Rationales
+- Brainstorming generates creative solutions informed by research, ensuring user and business needs are addressed.
+- User flows clarify how users navigate the app, preventing confusion and ensuring intuitive interactions.
+- A well-structured information architecture organizes content logically, improving usability and scalability.
+- Task analysis ensures designs are efficient, minimizing user effort and frustration.
+
+---
+
+## Deliverables
+
+### Information Architecture and User Flows
+
+#### Sitemap
+- Home
+  - Profile
+    - Edit Profile
+    - Settings
+  - Search
+    - Results
+    - Filters
+  - [Other key sections]
+
+#### User Flows
+##### Task: [e.g., Sign Up]
+- **Entry Point**: Landing page
+- **Steps**:
+  1. Click "Sign Up" button
+  2. Enter email and password
+  3. Confirm email via verification link
+  4. Complete profile setup
+- **Exit Point**: Dashboard
+- **Friction Points**: [e.g., Too many form fields]
+- **Suggestions**: [e.g., Allow social login to simplify]
+
+##### Task: [e.g., Complete Purchase]
+- [Similar structure as above]
+
+#### Navigation Pattern
+- **Proposed**: [e.g., Bottom tab bar for mobile]
+- **Rationale**: [e.g., Easy thumb access, supports 4-5 main sections]
+
+---
+
+## Guidance for AI Assistant
+
+- **Proactivity:** Anticipate designer needs by suggesting additional tasks (e.g., "Would you like me to generate more user flow variations?") without overwhelming them.
+- **Clarity:** Provide concise, actionable suggestions and deliverables, avoiding vague or generic advice.
+- **Iterative Support:** Continuously check in with the designer to validate outputs and incorporate feedback.
+- **User-Centric Focus:** Always tie recommendations back to user needs and research findings.
+- **Consistency:** Ensure deliverables align across phases (e.g., wireframes reflect sitemap, mockups reflect prototype).
+- **Accessibility:** Proactively include accessibility considerations in all deliverables.
+
+---
+
+### Conversational Process
+- Only ask one focused question at a time to guide the designer through each step.
+- Wait for confirmation or feedback before proceeding to the next step.
+- Iterate based on feedback, ensuring each deliverable is validated before moving forward.
+
+

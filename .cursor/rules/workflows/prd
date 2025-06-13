@@ -1,0 +1,98 @@
+# Cursor Workflow Rule: Product Requirement Document (PRD) Planning
+
+**Purpose:**
+Guide the AI assistant through a structured, collaborative planning and brainstorming process to produce a comprehensive Product Requirement Document (PRD) for a software project or feature.
+
+---
+
+## Goals
+- Achieve a clear, actionable, and robust product requirements specification aligned with user and business needs.
+- Ensure all objectives, constraints, and success metrics are thoroughly understood and documented.
+- Facilitate collaborative, iterative decision-making and solution selection.
+
+---
+
+## Step-by-Step Workflow
+
+### 1. Discovery Initiation
+- Begin by gathering the user's high-level objectives, constraints, target audience, and success metrics.
+- If needed, use available tools for context gathering:
+  - Codebase inspection (for existing systems)
+  - Web search for domain or competitor research
+- Document all discovered context and requirements in Markdown or AsciiDoc files as needed.
+
+### 2. Iterative Clarification
+- Ask focused, single questions to resolve ambiguities or fill gaps in requirements.
+- Confirm understanding of objectives, constraints, and user needs with the user, summarizing back periodically.
+- Continue clarification until all requirements are unambiguous and agreed upon.
+
+### 3. Solution Brainstorming & Evaluation
+- Generate multiple potential solution approaches.
+- Compare and contrast these options based on:
+  - Feasibility
+  - Development effort
+  - User experience
+  - Scalability
+  - Cost
+  - Alignment with objectives and constraints
+- Guide the user in selecting or refining the optimal solution path.
+
+### 4. Proposal Drafting
+- Present a structured proposal of the chosen solution, including:
+  - Rationale for the approach
+  - Key decisions and trade-offs
+  - Any open questions or unresolved issues
+- Require explicit user approval of the proposal before proceeding to PRD finalization.
+- Summarize the proposal in Markdown or AsciiDoc for review.
+
+### 5. PRD Finalization
+- Upon user approval, create a file named `PRD.adoc` in the workspace root using AsciiDoc format.
+- The PRD must include the following sections:
+  1. Title & Version
+  2. Overview
+  3. Goals & Success Metrics
+  4. Assumptions & Constraints
+  5. Target Audience & Stakeholders
+  6. User Stories / Use-cases
+  7. Requirements (Functional and Non-functional)
+  8. Solution Architecture / High-level Design
+  9. Milestones & Timeline
+  10. Acceptance Criteria
+  11. Open Questions & Future Work
+
+---
+
+## Interaction Guidelines
+- Confirm all assumptions and requirements with the user before documenting them.
+- Break down complex requirements into manageable components for discussion and documentation.
+- Proactively identify and document potential risks, open questions, and dependencies.
+- Summarize and validate all major decisions and requirements with the user at each phase.
+- Use clear, concise language to facilitate understanding.
+
+---
+
+## File Modification Constraints
+- **Strictly limit edits to Markdown (`.md`) and AsciiDoc (`.adoc`) files during this planning phase.**
+- The only non-negotiable code edit is the creation or update of the final PRD file (`PRD.adoc`).
+- Do NOT modify any code or configuration files during this process.
+
+---
+
+## Exit Criteria
+- The planning process is complete when:
+  - The user has explicitly approved the solution proposal.
+  - The comprehensive PRD file (`PRD.adoc`) has been generated or updated in the workspace.
+
+---
+
+## Tool Usage Cheat Sheet (Optional)
+| Information Need                | Recommended Tool           |
+|---------------------------------|---------------------------|
+| Inspect codebase                | codebase_search, read_file|
+| Research domain/competitors      | web_search                |
+| Summarize requirements          | edit_file (Markdown/AsciiDoc) |
+
+---
+
+**Note:**
+- The focus is on collaborative, iterative planning and documentation, not implementation. 

@@ -1,0 +1,63 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Cursor Workflow Rule: Implementation Workflow
+
+**Purpose:**
+Provide a systematic, generic, and reusable workflow for implementing tasks in software projects, accommodating various naming conventions for project documentation and ensuring strict adherence to task order, status transitions, and user approval protocols.
+
+---
+
+## 1. Implementation Process
+
+- Implement tasks sequentially as ordered in the active task list document, strictly respecting any grouping or prioritization specified therein.
+- Always cross-reference the relevant design document(s) for technical implementation details and product requirement document(s) (if available) for broader context. These may be system-wide (e.g., `DESIGN.adoc`, `TASKS.adoc`) or task-specific (e.g., `DESIGN-[task_identifier].adoc`, `TASKS-[task_identifier].adoc`).
+- **Task Status Updates:**
+  - `⬜` (Pending): Default status for a new or untouched task.
+  - `⭕` (Pending Approval): Status achieved **only after** a task's initial implementation is complete and it is ready for user review. A task transitions from `⬜` to `⭕`.
+  - `✅` (Completed): Status achieved **only after** a task marked `⭕` has been explicitly reviewed and approved by the user. A task transitions from `⭕` to `✅`.
+  - `❌` (Failed): Status if a task implementation is deemed unsuccessful or is rejected after review. A task typically transitions from `⬜` or `⭕` to `❌`.
+  - `❓` (Needs Clarification): Status if more information or input is required from the user before or during task implementation. A task can transition from `⬜` to `❓`.
+- **Critical:** A task's status changes from `⬜` to `⭕` immediately after its implementation is complete, signifying it is ready for review.
+
+---
+
+## 2. Implementation Checklist
+
+1. Identify the next pending (`⬜`) task from the active task list document, strictly following the documented sequence and any specified grouping.
+2. Thoroughly research requirements by consulting relevant design document(s) and any associated product requirement document(s).
+3. Implement the solution, adhering meticulously to the technical specifications, architectural guidelines, and design patterns detailed in the design document(s).
+4. Once initial implementation is verifiably complete, immediately update the task's status in the active task list document from `⬜` to `⭕` (Pending Approval).
+5. **CRITICAL:** Explicitly request user review of the implemented task. This request must be clear and direct (e.g., "The implementation for task '[task_name]' is complete and now marked as 'Pending Approval'. Would you like to review this implementation before I proceed to the next task?").
+6. Patiently wait for explicit user approval. Do not proceed with new tasks while awaiting review unless otherwise directed.
+7. Upon receiving unambiguous, explicit user approval, the very next action is to update the task's status in the active task list document from `⭕` to `✅` (Completed).
+
+---
+
+## 3. Code Standards
+
+- Rigorously adhere to all established coding best practices, style guides, and quality standards specific to the project.
+- Ensure complete consistency with any code examples, architectural patterns, or idioms provided in the relevant design document(s).
+- All developed modules, classes, functions, or components must precisely match their specified responsibilities and interfaces as outlined in the design documentation.
+
+---
+
+## 4. User Approval Protocol
+
+- **NON-NEGOTIABLE MANDATE:** Under no circumstances proceed to the next task or consider a currently implemented task fully finalized (`✅`) without obtaining explicit, unambiguous approval from the user for the work done on the task marked `⭕`.
+- Multiple review-feedback-revision cycles are expected and normal. Be prepared to receive detailed feedback, make all necessary revisions diligently, and resubmit for approval after each iteration.
+- Implement ALL requested changes thoroughly and accurately. After revisions, the task remains `⭕` and requires a new request for approval.
+- **Explicit approval** is defined as a direct affirmative statement from the user (e.g., "approved," "this looks good, proceed," "LGTM, move on," "changes accepted").
+- If user feedback is provided but lacks a clear statement of approval, the task status remains `⭕`. Do NOT interpret feedback as implicit approval. In such cases, STOP and explicitly seek clarification regarding approval status (e.g., "Thank you for this feedback. I will make these adjustments. To confirm, once these changes are made, will the task be considered approved, or is there a further review step?").
+- When requesting review, always provide a concise summary of the implementation or changes made to facilitate an efficient review process for the user.
+- The first and immediate action after receiving explicit user approval for a task currently in the `⭕` (Pending Approval) state is to update its status to `✅` (Completed) in the active task list document. Only then can the next task be considered.
+
+---
+
+**Note:**
+- The task order, priority, and grouping are to be strictly and solely derived from the active task list document itself.
+- The core focus of this workflow is on unyielding adherence to the documented implementation flow, the precise order and criteria for task status transitions (especially `⬜` → `⭕` → `✅`), and the paramount, non-negotiable importance of the user approval step before any task is marked complete or new work is begun.
+
+

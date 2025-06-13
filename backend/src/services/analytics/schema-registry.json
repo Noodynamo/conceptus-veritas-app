@@ -1,0 +1,20 @@
+{
+  "schemaVersions": {
+    "user_interaction_event": [1, 2]
+  },
+  "latestVersions": {
+    "user_interaction_event": 2
+  },
+  "migrations": {
+    "user_interaction_event": [
+      {
+        "fromVersion": 1,
+        "toVersion": 2,
+        "migrationDate": "2024-06-11T00:00:00.000Z",
+        "changes": "Added device_info property to user_interaction_event schema",
+        "isBreaking": false
+      }
+    ]
+  },
+  "lastUpdated": "2024-06-11T00:00:00.000Z"
+}

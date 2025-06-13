@@ -1,0 +1,217 @@
+name: Enhanced PR Validation
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/enhanced-pr-validation.yml'
+
+jobs:
+  # Initial fast checks
+  initial-checks:
+    name: Initial Validation
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: './backend/package-lock.json'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run linting
+        run: npm run lint
+      
+      - name: Verify build
+        run: npm run build --if-present
+  
+  # Check PR title and description
+  pr-metadata-check:
+    name: PR Metadata Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR title
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const title = context.payload.pull_request.title;
+            const conventionalPattern = /^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9-]+\))?: .{1,100}/;
+            
+            if (!conventionalPattern.test(title)) {
+              core.setFailed(`PR title "${title}" does not follow the Conventional Commits format. 
+              Example: "feat(auth): implement JWT token validation"`);
+            }
+      
+      - name: Check PR description
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const body = context.payload.pull_request.body;
+            if (!body || body.trim().length < 10) {
+              core.setFailed("PR description is too short. Please provide meaningful context for this change.");
+            }
+  
+  # Check test coverage
+  test-coverage:
+    name: Test Coverage
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: './backend/package-lock.json'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run tests with coverage
+        run: npm run test:coverage
+      
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-coverage-report
+          path: ./backend/coverage
+      
+      - name: Check coverage thresholds
+        run: npm run test:coverage:check
+  
+  # Run the primary CI/CD processes
+  main-validation:
+    name: Main Validation
+    runs-on: ubuntu-latest
+    needs: [initial-checks, pr-metadata-check]
+    steps:
+      - name: Trigger pull-request-ci workflow
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'pull-request-ci.yml',
+              ref: context.payload.pull_request.head.ref
+            });
+      
+      - name: Trigger security-scan workflow
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'security-scan.yml',
+              ref: context.payload.pull_request.head.ref
+            });
+  
+  # Check for database migration conflicts
+  migration-check:
+    name: Migration Validation
+    runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.changed_files, 'src/db/migrations')
+    defaults:
+      run:
+        working-directory: ./backend
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: './backend/package-lock.json'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Check migration conflicts
+        run: npm run migrations:check
+      
+      - name: Validate migration files
+        run: npm run migrations:validate
+  
+  # Summarize PR status for reviewers
+  pr-summary:
+    name: PR Summary
+    runs-on: ubuntu-latest
+    needs: [test-coverage, main-validation, migration-check]
+    if: always()
+    steps:
+      - name: Summarize PR status
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.login === 'github-actions[bot]' && 
+              comment.body.includes('PR Validation Summary')
+            );
+            
+            const allJobs = ${{ toJSON(needs) }};
+            const jobStatus = Object.entries(allJobs).map(([job, status]) => 
+              `| ${job} | ${status.result === 'success' ? '✅ Passed' : '❌ Failed'} |`
+            ).join('\n');
+            
+            const summary = `## PR Validation Summary
+            
+            | Job | Status |
+            | --- | ------ |
+            ${jobStatus}
+            
+            ${allJobs.test_coverage?.result === 'success' 
+              ? '✅ Test coverage requirements met' 
+              : '❓ Test coverage information not available'}
+            
+            ${allJobs.migration_check?.result === 'success' 
+              ? '✅ No migration conflicts detected' 
+              : allJobs.migration_check?.result === 'skipped'
+                ? '⏩ No database migrations in this PR'
+                : '❌ Migration validation failed'}
+            
+            Please make sure all checks pass before requesting a review.
+            `;
+            
+            if (botComment) {
+              github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: summary
+              });
+            } else {
+              github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: summary
+              });
+            } 

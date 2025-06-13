@@ -1,0 +1,36 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "@api/*": ["src/api/*"],
+      "@config/*": ["src/config/*"],
+      "@core/*": ["src/core/*"],
+      "@db/*": ["src/db/*"],
+      "@models/*": ["src/models/*"],
+      "@schemas/*": ["src/schemas/*"],
+      "@services/*": ["src/services/*"],
+      "@tasks/*": ["src/tasks/*"],
+      "@utils/*": ["src/utils/*"],
+      "@shared/*": ["../shared/*"]
+    },
+    "typeRoots": [
+      "./node_modules/@types",
+      "./src/types"
+    ],
+    "noEmit": false
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts"
+  ]
+} 

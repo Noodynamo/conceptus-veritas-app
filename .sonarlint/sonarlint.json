@@ -1,0 +1,34 @@
+{
+  "rules": {
+    "javascript:S1848": {
+      "level": "on"
+    },
+    "javascript:S1481": {
+      "level": "on"
+    },
+    "javascript:S3796": {
+      "level": "on"
+    },
+    "javascript:S2424": {
+      "level": "on"
+    },
+    "javascript:S1854": {
+      "level": "on"
+    },
+    "typescript:S1848": {
+      "level": "on"
+    },
+    "typescript:S1481": {
+      "level": "on"
+    },
+    "typescript:S3796": {
+      "level": "on"
+    },
+    "typescript:S2424": {
+      "level": "on"
+    },
+    "typescript:S1854": {
+      "level": "on"
+    }
+  }
+}

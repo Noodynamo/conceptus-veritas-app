@@ -1,0 +1,55 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+React + Styled Components
+Purpose
+Standardize our React codebase around functional components, hooks, and best-practice usage of styled-components.
+
+Guidelines
+1. Component Paradigm
+Prefer functional components with React hooks; avoid class components unless a compelling legacy reason exists.
+
+2. Styled-Components Best Practices
+Import via styled-components/macro for clearer stack traces.
+
+Wrap the app in <ThemeProvider> to expose a global theme (see src/styles/theme.js).
+
+Build reusable styled components; colocate them under src/components/styled/.
+
+Use props-based dynamic styling and the attrs helper for frequently reused props.
+
+Leverage the css`` helper for complex or conditional snippets.
+
+Always type styled props (e.g., with TypeScript utility types from @types/styled-components).
+
+Follow the latest official styled-components documentation.
+
+3. Folder Structure
+text
+Copy
+Edit
+src/
+  components/
+    styled/           # reusable styled components
+  styles/
+    theme.js          # central theme object
+    globalStyles.js   # createGlobalStyle definitions
+  pages/
+  utils/
+4. Additional Instructions
+Name styled components with the Styled prefix (e.g., StyledButton).
+
+Enforce a consistent theming system—colors, spacing, typography—to avoid hard-coded values.
+
+All styling must live in CSS-in-JS (styled-components); no separate .css files.
+
+Use the css prop (Emotion-style) or inline template literals for one-off conditional styles where appropriate.
+
+Ensure full TypeScript support across all styled components.
+
+Enforcement
+Completions that violate these rules should be marked low confidence or rejected.
+

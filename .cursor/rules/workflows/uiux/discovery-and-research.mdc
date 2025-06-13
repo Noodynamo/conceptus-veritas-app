@@ -1,0 +1,102 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Cursor Workflow Rule: UI/UX Discovery and Research Phase
+
+**Goal:**
+Understand the users, business objectives, and project scope to lay a foundation for user-centered design.
+
+---
+
+## Step-by-Step Workflow
+
+### 1. Facilitate Stakeholder Input Collection
+- Prompt the designer to share project briefs, business goals, or stakeholder inputs.
+- Suggest questions to ask stakeholders, such as: "What are the primary business objectives?"
+- Summarize stakeholder inputs into a concise project brief, highlighting goals, target audience, and success metrics.
+
+### 2. Support User Research
+- Propose methods for user research, such as surveys, interviews, or contextual inquiries, tailored to the project's audience.
+- Generate sample survey questions or interview scripts (e.g., "What challenges do you face with similar apps?"
+- Analyze user research data provided by the designer and summarize findings into key themes (e.g., user needs, pain points, preferences).
+- Create user personas based on research, including demographics, goals, frustrations, and behaviors.
+
+### 3. Conduct Competitive Analysis
+- Suggest analyzing 3-5 competitor applications to identify strengths, weaknesses, and gaps.
+- Generate a comparison table template to document competitors' features, UI patterns, and user experience.
+- Summarize competitive analysis findings, highlighting opportunities for differentiation.
+
+### 4. Identify Technical Constraints
+- Prompt the designer to share information about the technical environment (e.g., platform, device types, or integrations).
+- Suggest questions for developers, such as: "Are there limitations on animations?"
+- Document technical constraints to inform design decisions.
+
+### 5. Define Project Scope
+- Assist in creating a feature list based on stakeholder and user inputs.
+- Prioritize features using a framework like MoSCoW (Must-have, Should-have, Could-have, Won't-have).
+- Draft a project scope statement summarizing key deliverables (e.g., wireframes, prototypes) and timelines.
+
+---
+
+## Rationales
+- Stakeholder input ensures the design aligns with business goals, preventing misaligned priorities.
+- User research provides data-driven insights into user needs, ensuring the app is relevant and usable.
+- Competitive analysis helps identify industry standards and opportunities to stand out, avoiding redundant solutions.
+- Understanding technical constraints early prevents rework by ensuring designs are feasible.
+- A clear scope keeps the project focused, reducing scope creep and ensuring timely delivery.
+
+---
+
+## Deliverables
+
+### Discovery and Research Summary
+
+#### Project Brief
+- **Business Goals**: [Summarize stakeholder goals, e.g., increase user engagement by 20%]
+- **Target Audience**: [Summarize audience, e.g., young professionals aged 25-35]
+- **KPIs**: [List metrics, e.g., user retention rate, task completion time]
+
+#### User Personas
+- **Persona 1**: [Name, age, goals, frustrations, behaviors]
+- **Persona 2**: [Name, age, goals, frustrations, behaviors]
+
+#### User Journey Map
+- **Key Tasks**: [List tasks, e.g., sign up, complete profile]
+- **Pain Points**: [List issues, e.g., complex navigation]
+- **Opportunities**: [List improvements, e.g., simplified onboarding]
+
+#### Competitive Analysis
+| Competitor | Strengths | Weaknesses | Opportunities |
+|------------|-----------|------------|---------------|
+| App A      | [e.g., Intuitive navigation] | [e.g., Poor accessibility] | [e.g., Add voice input] |
+| App B      | [e.g., Clean UI] | [e.g., Limited features] | [e.g., Offer customization] |
+
+#### Technical Constraints
+- [List constraints, e.g., Must support iOS and Android, no complex animations]
+
+#### Project Scope
+- **Key Features**: [List prioritized features]
+- **Deliverables**: [e.g., Wireframes, prototypes, design system]
+- **Timeline**: [e.g., Research completed by Week 2]
+
+---
+
+## Guidance for AI Assistant
+
+- **Proactivity:** Anticipate designer needs by suggesting additional tasks (e.g., "Would you like me to generate more user flow variations?") without overwhelming them.
+- **Clarity:** Provide concise, actionable suggestions and deliverables, avoiding vague or generic advice.
+- **Iterative Support:** Continuously check in with the designer to validate outputs and incorporate feedback.
+- **User-Centric Focus:** Always tie recommendations back to user needs and research findings.
+- **Consistency:** Ensure deliverables align across phases (e.g., wireframes reflect sitemap, mockups reflect prototype).
+- **Accessibility:** Proactively include accessibility considerations in all deliverables.
+
+---
+
+### Conversational Process
+- Only ask one focused question at a time to guide the designer through each step.
+- Wait for confirmation or feedback before proceeding to the next step.
+- Iterate based on feedback, ensuring each deliverable is validated before moving forward.
+
+

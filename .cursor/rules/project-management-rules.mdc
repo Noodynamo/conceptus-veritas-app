@@ -1,0 +1,16 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+- Use markdown files: `README.md` (project overview, setup), `PLANNING.md` (plans, milestones), `TASK.md` (tasks, assignments, progress).
+- Keep files under 500 lines. Split into modules when approaching/exceeding this limit.
+- Start fresh conversations often to avoid response quality degradation in long threads.
+- Limit each message to one task/request for focused, accurate responses.
+- **Testing**: Write unit tests for every new function. Test early and often.
+- **Documentation**: Write docs and comments during development. Do not delay. Update `README.md`, `PLANNING.md`, `TASK.md` as project evolves.
+-Update all actions to the Dart AI via MCP
+-Make sure to always move tasks from to do, doing, and complete.
+-Make sure to update the description as tasks get moved from to do to doing and also update the description with what has been done once the task is complete.
+-Don't create new subtasks on the Dartboard.
+-You ARE NOT TO CHANGE THE APP FILE STRUCTURE UNLESS YOU ASK VERY SPECIFICALLY AND WITH CLEARLY DEFINED EXAMPLES WHY YOU NEED YOU MAKE THE CHANGE

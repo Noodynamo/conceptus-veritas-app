@@ -1,0 +1,112 @@
+# Cursor Workflow Rule: Technical Design Document (TDD) Planning
+
+**Purpose:**
+Guide the AI assistant through a structured, collaborative planning and brainstorming process to produce a comprehensive Technical Design Document (TDD) for a software project or component.
+
+---
+
+## Goals
+- Achieve a clear, actionable, and robust technical design aligned with user and business requirements.
+- Ensure all technical objectives, constraints, and trade-offs are thoroughly understood and documented.
+- Facilitate collaborative, iterative decision-making and risk identification.
+
+---
+
+## Step-by-Step Workflow
+
+### 1. Requirement Ingestion & Discovery
+- Begin by gathering the user's technical objectives, system constraints, performance goals, scalability requirements, security considerations, and integration points.
+- If available, read and reference the Product Requirement Document (PRD). Otherwise, query the user directly for requirements.
+- Use available tools for context gathering:
+  - Codebase inspection (for existing systems)
+  - Reviewing architecture diagrams
+  - Web search for technology research
+- Document all discovered requirements and context in Markdown or AsciiDoc files as needed.
+
+### 2. Iterative Clarification & PRD Alignment
+- Ask focused, single questions to resolve ambiguities or fill gaps in technical requirements.
+- Confirm understanding of requirements and design considerations with the user, summarizing back periodically.
+- If a PRD is provided, ensure all technical planning aligns with its stated goals and constraints.
+- Continue clarification until all requirements are unambiguous and agreed upon.
+
+### 3. Technical Solution Brainstorming & Evaluation
+- Generate multiple potential technical designs or architectural approaches.
+- Compare and contrast these options based on:
+  - Scalability
+  - Performance
+  - Maintainability
+  - Development effort
+  - Cost
+  - Security implications
+  - Ease of integration with existing systems
+- Guide the user in selecting or refining the optimal technical path forward.
+- Use mermaid diagrams to visualize concepts, relationships, and flows.
+
+### 4. Technical Proposal Drafting
+- Present a structured proposal of the chosen technical solution, including:
+  - Design rationale
+  - Key architectural decisions
+  - Technology stack choices
+  - Any open technical questions or trade-offs
+- Require explicit user approval of the proposal before proceeding to TDD finalization.
+- Summarize the proposal in Markdown or AsciiDoc for review.
+
+### 5. TDD Finalization
+- Upon user approval, create or update an AsciiDoc file in the workspace:
+  - Use `DESIGN.adoc` if the TDD corresponds directly to a `PRD.adoc`.
+  - Use `DESIGN-[task_identifier].adoc` (e.g., `DESIGN-user-authentication.adoc`) for task- or component-specific designs.
+- The TDD must include the following sections:
+  1. Introduction/Overview
+  2. Goals and Non-Goals
+  3. Current Architecture (if applicable)
+  4. Proposed Architecture
+  5. High-Level Design
+  6. Detailed Design (Components, Modules, Data Models, API Specifications, Sequence Diagrams)
+  7. Technology Stack
+  8. Deployment Considerations
+  9. Scalability and Performance
+  10. Security Considerations
+  11. Risk Assessment and Mitigation Plan
+  12. Testing Strategy
+  13. Open Issues/Future Considerations
+- Use mermaid diagrams for visualizations. Do not include code snippets.
+
+---
+
+## Interaction Guidelines
+- Confirm all technical assumptions with the user before documenting them.
+- Break down complex systems into manageable components for discussion and documentation.
+- Proactively identify and document potential risks, open questions, and dependencies.
+- Summarize and validate all major decisions and requirements with the user at each phase.
+- Use clear, concise language and visual aids (mermaid diagrams) to facilitate understanding.
+
+---
+
+## File Modification Constraints
+- **Strictly limit edits to Markdown (`.md`) and AsciiDoc (`.adoc`) files during this planning phase.**
+- The only non-negotiable code edit is the creation or update of the final TDD file (`DESIGN.adoc` or `DESIGN-[task_identifier].adoc`).
+- Do NOT modify any code or configuration files during this process.
+
+---
+
+## Exit Criteria
+- The planning process is complete when:
+  - The user has explicitly approved the technical proposal.
+  - The comprehensive TDD file has been generated or updated in the workspace.
+
+---
+
+## Tool Usage Cheat Sheet (Optional)
+| Information Need                | Recommended Tool           |
+|---------------------------------|---------------------------|
+| Inspect codebase                | codebase_search, read_file|
+| Review architecture diagrams    | read_file                 |
+| Research technology options     | web_search                |
+| Summarize requirements          | edit_file (Markdown/AsciiDoc) |
+
+---
+
+**Note:**
+- Leverage mermaid diagrams for all visualizations.
+- Avoid including code snippets in the TDD.
+- The focus is on collaborative, iterative planning and documentation, not implementation. 

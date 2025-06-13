@@ -1,0 +1,180 @@
+# CODEOWNERS for Conceptus Veritas Backend Repository
+# ---------------------------------------------
+# This file defines code ownership for the Conceptus Veritas backend repository.
+# Code owners are automatically requested for review when someone opens a pull 
+# request that modifies code they own. Multiple owners can be specified.
+# Order is important - the last matching pattern takes precedence.
+
+##########################################
+# TEAMS AND RESPONSIBILITY AREAS
+##########################################
+
+# Team Definitions (for reference):
+# @conceptus-veritas/backend-leads - Lead backend developers responsible for architecture and core functionality
+# @conceptus-veritas/backend-developers - All backend developers
+# @conceptus-veritas/security-team - Security specialists
+# @conceptus-veritas/devops - DevOps and infrastructure specialists
+# @conceptus-veritas/database - Database specialists
+# @conceptus-veritas/ai-team - AI and ML specialists
+# @conceptus-veritas/docs - Documentation specialists
+# @conceptus-veritas/api-team - API design specialists
+
+##########################################
+# DEFAULT OWNERS
+##########################################
+
+# Default owners for everything in the repo (fallback)
+*                                   @Noodynamo @conceptus-veritas/backend-leads
+
+##########################################
+# REPOSITORY CONFIGURATION
+##########################################
+
+# Repository configuration and GitHub workflows
+/.github/                           @Noodynamo @conceptus-veritas/devops
+/backend/.github/                   @Noodynamo @conceptus-veritas/devops
+/.github/workflows/                 @Noodynamo @conceptus-veritas/devops
+/backend/.github/workflows/         @Noodynamo @conceptus-veritas/devops
+*.yml                               @Noodynamo @conceptus-veritas/devops
+*.yaml                              @Noodynamo @conceptus-veritas/devops
+
+# Documentation
+/backend/docs/                      @Noodynamo @conceptus-veritas/docs
+/backend/README.md                  @Noodynamo @conceptus-veritas/docs
+/backend/CONTRIBUTING.md            @Noodynamo @conceptus-veritas/docs
+/backend/CODE_OF_CONDUCT.md         @Noodynamo @conceptus-veritas/docs
+
+##########################################
+# API AND CONTROLLERS
+##########################################
+
+# API routes and controllers - general
+/backend/src/api/                   @Noodynamo @conceptus-veritas/api-team
+
+# API versioning
+/backend/src/api/v1/                @Noodynamo @conceptus-veritas/api-team
+
+# Authentication and authorization
+/backend/src/api/v1/auth/           @Noodynamo @conceptus-veritas/security-team @conceptus-veritas/api-team
+
+# Feature-specific API endpoints
+/backend/src/api/v1/ask/            @Noodynamo @conceptus-veritas/api-team
+/backend/src/api/v1/explore/        @Noodynamo @conceptus-veritas/api-team
+/backend/src/api/v1/forum/          @Noodynamo @conceptus-veritas/api-team
+/backend/src/api/v1/journal/        @Noodynamo @conceptus-veritas/api-team
+/backend/src/api/v1/profile/        @Noodynamo @conceptus-veritas/api-team @conceptus-veritas/security-team
+/backend/src/api/v1/quest/          @Noodynamo @conceptus-veritas/api-team
+
+##########################################
+# DATABASE AND DATA MODELS
+##########################################
+
+# Database models and schemas
+/backend/src/models/                @Noodynamo @conceptus-veritas/database
+/backend/src/schemas/               @Noodynamo @conceptus-veritas/database @conceptus-veritas/api-team
+
+# Database configuration and migrations
+/backend/src/db/                    @Noodynamo @conceptus-veritas/database
+/backend/src/db/migrations/         @Noodynamo @conceptus-veritas/database
+
+##########################################
+# CORE FUNCTIONALITY
+##########################################
+
+# Core application functionality
+/backend/src/core/                  @Noodynamo @conceptus-veritas/backend-leads
+
+##########################################
+# SERVICES
+##########################################
+
+# Service layer - general
+/backend/src/services/              @Noodynamo @conceptus-veritas/backend-developers
+
+# AI services and components
+/backend/src/services/ai/           @Noodynamo @conceptus-veritas/ai-team
+/backend/src/services/ai/evaluation/        @Noodynamo @conceptus-veritas/ai-team
+/backend/src/services/ai/model_services/    @Noodynamo @conceptus-veritas/ai-team
+/backend/src/services/ai/prompt_services/   @Noodynamo @conceptus-veritas/ai-team
+
+# Feature-specific services
+/backend/src/services/ask/          @Noodynamo @conceptus-veritas/backend-developers
+/backend/src/services/explore/      @Noodynamo @conceptus-veritas/backend-developers
+/backend/src/services/forum/        @Noodynamo @conceptus-veritas/backend-developers
+/backend/src/services/journal/      @Noodynamo @conceptus-veritas/backend-developers
+/backend/src/services/profile/      @Noodynamo @conceptus-veritas/backend-developers @conceptus-veritas/security-team
+/backend/src/services/quest/        @Noodynamo @conceptus-veritas/backend-developers
+
+##########################################
+# CONFIGURATION
+##########################################
+
+# Configuration files
+/backend/src/config/                @Noodynamo @conceptus-veritas/backend-leads @conceptus-veritas/devops
+*.config.js                         @Noodynamo @conceptus-veritas/backend-leads @conceptus-veritas/devops
+*.config.ts                         @Noodynamo @conceptus-veritas/backend-leads @conceptus-veritas/devops
+.env.example                        @Noodynamo @conceptus-veritas/backend-leads @conceptus-veritas/devops @conceptus-veritas/security-team
+
+##########################################
+# TESTING
+##########################################
+
+# Test files and directories
+/backend/tests/                     @Noodynamo @conceptus-veritas/backend-developers
+/backend/tests/unit/                @Noodynamo @conceptus-veritas/backend-developers
+/backend/tests/integration/         @Noodynamo @conceptus-veritas/backend-developers
+/backend/tests/e2e/                 @Noodynamo @conceptus-veritas/backend-developers @conceptus-veritas/api-team
+*.test.js                           @Noodynamo @conceptus-veritas/backend-developers
+*.test.ts                           @Noodynamo @conceptus-veritas/backend-developers
+*.spec.js                           @Noodynamo @conceptus-veritas/backend-developers
+*.spec.ts                           @Noodynamo @conceptus-veritas/backend-developers
+
+##########################################
+# UTILITIES AND TASKS
+##########################################
+
+# Background tasks and utilities
+/backend/src/tasks/                 @Noodynamo @conceptus-veritas/backend-developers
+/backend/src/utils/                 @Noodynamo @conceptus-veritas/backend-developers
+
+##########################################
+# DEPENDENCIES AND PACKAGE MANAGEMENT
+##########################################
+
+# Package dependencies
+package.json                        @Noodynamo @conceptus-veritas/backend-leads @conceptus-veritas/devops
+package-lock.json                   @Noodynamo @conceptus-veritas/backend-leads @conceptus-veritas/devops
+yarn.lock                           @Noodynamo @conceptus-veritas/backend-leads @conceptus-veritas/devops
+pnpm-lock.yaml                      @Noodynamo @conceptus-veritas/backend-leads @conceptus-veritas/devops
+
+##########################################
+# SECURITY
+##########################################
+
+# Security-related files
+/backend/SECURITY.md                @Noodynamo @conceptus-veritas/security-team
+/backend/.github/SECURITY.md        @Noodynamo @conceptus-veritas/security-team
+
+# Security-critical code areas
+/backend/src/core/auth/             @Noodynamo @conceptus-veritas/security-team
+/backend/src/utils/validation.ts    @Noodynamo @conceptus-veritas/security-team
+/backend/src/utils/sanitize.ts      @Noodynamo @conceptus-veritas/security-team
+/backend/src/middleware/auth.ts     @Noodynamo @conceptus-veritas/security-team
+
+##########################################
+# INFRASTRUCTURE AND DEPLOYMENT
+##########################################
+
+# Infrastructure and deployment configuration
+Dockerfile                          @Noodynamo @conceptus-veritas/devops
+docker-compose.yml                  @Noodynamo @conceptus-veritas/devops
+.dockerignore                       @Noodynamo @conceptus-veritas/devops
+/backend/scripts/deploy.sh          @Noodynamo @conceptus-veritas/devops
+/backend/scripts/ci/                @Noodynamo @conceptus-veritas/devops
+/backend/k8s/                       @Noodynamo @conceptus-veritas/devops
+
+# Note: This CODEOWNERS file should be updated when:
+# 1. New directories or critical files are added
+# 2. Team structures change
+# 3. Responsibility areas shift
+# 4. New team members join who should be code owners 

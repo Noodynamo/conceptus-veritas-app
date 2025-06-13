@@ -1,0 +1,79 @@
+version: 2
+updates:
+  # Check for updates to npm packages
+  - package-ecosystem: "npm"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    # Only allow minor and patch updates
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+    # Group these dependencies in the same PR
+    groups:
+      development-dependencies:
+        patterns:
+          - "eslint*"
+          - "@typescript-eslint/*"
+          - "jest*"
+          - "@types/*"
+      production-dependencies:
+        patterns:
+          - "express"
+          - "@fastify/*"
+          - "sequelize"
+          - "pg"
+          - "redis"
+    # Limit number of open PRs
+    open-pull-requests-limit: 10
+    # Assign specific reviewers
+    reviewers:
+      - "Noodynamo"
+    # Labels to apply
+    labels:
+      - "dependencies"
+      - "automerge"
+    # Create pull request with specific title
+    commit-message:
+      prefix: "deps"
+      prefix-development: "chore"
+      include: "scope"
+
+  # Check for updates to GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "09:00"
+      timezone: "UTC"
+    reviewers:
+      - "Noodynamo"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "automerge"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+
+  # Check for updates to Docker images
+  - package-ecosystem: "docker"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "friday"
+      time: "09:00"
+      timezone: "UTC"
+    reviewers:
+      - "Noodynamo"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "automerge"
+    commit-message:
+      prefix: "docker"
+      include: "scope" 

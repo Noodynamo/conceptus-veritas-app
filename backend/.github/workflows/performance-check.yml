@@ -1,0 +1,189 @@
+name: Performance Check
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/src/**'
+      - '.github/workflows/performance-check.yml'
+
+jobs:
+  performance:
+    name: Performance Testing
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: './backend/package-lock.json'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build project
+        run: npm run build
+      
+      # Install and setup test tools
+      - name: Install performance testing tools
+        run: npm install -g autocannon clinic
+      
+      # Start the server in the background
+      - name: Start server
+        run: |
+          node dist/main.js &
+          echo $! > server.pid
+          sleep 5 # Wait for server to start
+      
+      # Run benchmark tests
+      - name: Run API benchmarks
+        run: |
+          mkdir -p performance-results
+          
+          # Run benchmark for endpoints
+          autocannon -c 100 -d 10 -j http://localhost:3000/api/v1/health > performance-results/health.json
+          autocannon -c 50 -d 10 -j http://localhost:3000/api/v1/status > performance-results/status.json
+          
+          # Generate reports
+          echo "### Performance Test Results" > performance-results/summary.md
+          echo "" >> performance-results/summary.md
+          echo "| Endpoint | Requests/sec | Latency (avg) | Latency (p95) |" >> performance-results/summary.md
+          echo "| -------- | ------------ | ------------- | ------------- |" >> performance-results/summary.md
+          
+          # Extract health endpoint metrics
+          HEALTH_RPS=$(cat performance-results/health.json | jq '.requests.average')
+          HEALTH_LATENCY=$(cat performance-results/health.json | jq '.latency.average')
+          HEALTH_P95=$(cat performance-results/health.json | jq '.latency.p95')
+          echo "| /api/v1/health | $HEALTH_RPS | $HEALTH_LATENCY ms | $HEALTH_P95 ms |" >> performance-results/summary.md
+          
+          # Extract status endpoint metrics
+          STATUS_RPS=$(cat performance-results/status.json | jq '.requests.average')
+          STATUS_LATENCY=$(cat performance-results/status.json | jq '.latency.average')
+          STATUS_P95=$(cat performance-results/status.json | jq '.latency.p95')
+          echo "| /api/v1/status | $STATUS_RPS | $STATUS_LATENCY ms | $STATUS_P95 ms |" >> performance-results/summary.md
+      
+      # Stop the server
+      - name: Stop server
+        run: kill $(cat server.pid)
+      
+      # Upload results
+      - name: Upload performance results
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-results
+          path: ./backend/performance-results
+      
+      # Comment on PR
+      - name: Comment on PR with performance results
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            
+            // Read the performance summary
+            const summary = fs.readFileSync('./backend/performance-results/summary.md', 'utf8');
+            
+            // Get base branch performance data if available
+            let comparisonText = '';
+            try {
+              // Checkout base branch
+              await exec.exec('git checkout', [process.env.GITHUB_BASE_REF]);
+              await exec.exec('npm ci', [], { cwd: './backend' });
+              await exec.exec('npm run build', [], { cwd: './backend' });
+              
+              // Start the server
+              const serverProcess = await exec.exec('node dist/main.js', [], { 
+                cwd: './backend',
+                ignoreReturnCode: true,
+                silent: true 
+              });
+              
+              // Wait for server to start
+              await new Promise(resolve => setTimeout(resolve, 5000));
+              
+              // Run benchmark for comparison
+              await exec.exec('mkdir -p performance-results-base', [], { cwd: './backend' });
+              await exec.exec('autocannon -c 100 -d 10 -j http://localhost:3000/api/v1/health > performance-results-base/health.json', [], { cwd: './backend' });
+              
+              // Stop the server
+              process.kill(serverProcess.pid);
+              
+              // Compare results
+              const currentHealth = JSON.parse(fs.readFileSync('./backend/performance-results/health.json', 'utf8'));
+              const baseHealth = JSON.parse(fs.readFileSync('./backend/performance-results-base/health.json', 'utf8'));
+              
+              const rpsChange = ((currentHealth.requests.average - baseHealth.requests.average) / baseHealth.requests.average * 100).toFixed(2);
+              const latencyChange = ((currentHealth.latency.average - baseHealth.latency.average) / baseHealth.latency.average * 100).toFixed(2);
+              
+              comparisonText = `
+              ### Comparison with Base Branch
+              
+              | Metric | Change |
+              | ------ | ------ |
+              | Requests/sec | ${rpsChange}% ${rpsChange > 0 ? '✅' : '⚠️'} |
+              | Latency | ${latencyChange}% ${latencyChange < 0 ? '✅' : '⚠️'} |
+              
+              ${
+                rpsChange < -5 || latencyChange > 5 
+                  ? '⚠️ **Warning: Potential performance regression detected.**' 
+                  : '✅ No significant performance regressions detected.'
+              }
+              `;
+            } catch (error) {
+              comparisonText = '\n### Comparison with Base Branch\n\nUnable to compare with base branch.';
+              console.error(error);
+            }
+            
+            // Find any comments already made by this action
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.login === 'github-actions[bot]' && 
+              comment.body.includes('## Performance Test Results')
+            );
+            
+            const commentBody = `## Performance Test Results
+            
+            ${summary}
+            
+            ${comparisonText}
+            
+            <details>
+              <summary>How to interpret these results</summary>
+              
+              - **Requests/sec**: Higher is better. Significant drops may indicate performance regressions.
+              - **Latency**: Lower is better. Increases may indicate slower response times.
+              - **p95 Latency**: 95th percentile latency - 95% of requests are faster than this.
+              
+              These tests are run in a CI environment and may not represent production performance.
+            </details>
+            `;
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: commentBody
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: commentBody
+              });
+            } 

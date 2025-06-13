@@ -1,0 +1,170 @@
+name: Coverage Report
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/coverage-report.yml'
+    types: [opened, synchronize, reopened]
+
+jobs:
+  coverage:
+    name: Test Coverage Report
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: './backend/package-lock.json'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Generate coverage report
+        run: npm run test:coverage
+      
+      # Get base branch coverage
+      - name: Checkout base branch
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.base_ref }}
+          path: base-branch
+      
+      - name: Install base branch dependencies
+        run: cd ../base-branch/backend && npm ci
+      
+      - name: Generate base branch coverage
+        run: cd ../base-branch/backend && npm run test:coverage
+      
+      # Compare coverage and comment on PR
+      - name: Compare coverage
+        id: compare
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            
+            // Read current coverage data
+            const currentSummary = JSON.parse(
+              fs.readFileSync('./backend/coverage/coverage-summary.json', 'utf8')
+            );
+            
+            // Read base branch coverage data
+            const baseSummary = JSON.parse(
+              fs.readFileSync('./base-branch/backend/coverage/coverage-summary.json', 'utf8')
+            );
+            
+            // Compare the coverage
+            const current = currentSummary.total;
+            const base = baseSummary.total;
+            
+            const formatPct = (value) => `${(value * 100).toFixed(2)}%`;
+            const diffPct = (curr, base) => {
+              const diff = (curr - base) * 100;
+              return diff >= 0 ? `+${diff.toFixed(2)}%` : `${diff.toFixed(2)}%`;
+            };
+            
+            const comparison = {
+              lines: {
+                current: formatPct(current.lines.pct / 100),
+                base: formatPct(base.lines.pct / 100),
+                diff: diffPct(current.lines.pct / 100, base.lines.pct / 100)
+              },
+              statements: {
+                current: formatPct(current.statements.pct / 100),
+                base: formatPct(base.statements.pct / 100),
+                diff: diffPct(current.statements.pct / 100, base.statements.pct / 100)
+              },
+              functions: {
+                current: formatPct(current.functions.pct / 100),
+                base: formatPct(base.functions.pct / 100),
+                diff: diffPct(current.functions.pct / 100, base.functions.pct / 100)
+              },
+              branches: {
+                current: formatPct(current.branches.pct / 100),
+                base: formatPct(base.branches.pct / 100),
+                diff: diffPct(current.branches.pct / 100, base.branches.pct / 100)
+              }
+            };
+            
+            // Create a comment with the comparison
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.login === 'github-actions[bot]' && 
+              comment.body.includes('## Test Coverage Report')
+            );
+            
+            const diffColor = (diff) => {
+              if (diff.startsWith('+')) return '🟢';
+              if (diff.startsWith('-')) return '🔴';
+              return '⚪';
+            };
+            
+            const commentBody = `## Test Coverage Report
+
+            | Type | Current PR | Base Branch | Change |
+            | ---- | ---------- | ----------- | ------ |
+            | Lines | ${comparison.lines.current} | ${comparison.lines.base} | ${diffColor(comparison.lines.diff)} ${comparison.lines.diff} |
+            | Statements | ${comparison.statements.current} | ${comparison.statements.base} | ${diffColor(comparison.statements.diff)} ${comparison.statements.diff} |
+            | Functions | ${comparison.functions.current} | ${comparison.functions.base} | ${diffColor(comparison.functions.diff)} ${comparison.functions.diff} |
+            | Branches | ${comparison.branches.current} | ${comparison.branches.base} | ${diffColor(comparison.branches.diff)} ${comparison.branches.diff} |
+
+            ${
+              current.lines.pct < base.lines.pct || 
+              current.statements.pct < base.statements.pct || 
+              current.functions.pct < base.functions.pct || 
+              current.branches.pct < base.branches.pct 
+                ? '⚠️ **Warning: Coverage has decreased in some areas**'
+                : '✅ Coverage is stable or has improved'
+            }
+
+            <details>
+              <summary>View detailed coverage report</summary>
+              
+              ### Files with coverage changes
+              
+              ${Object.entries(currentSummary)
+                .filter(([key]) => key !== 'total' && baseSummary[key])
+                .filter(([_, value]) => {
+                  const baseFile = baseSummary[key];
+                  return value.lines.pct !== baseFile.lines.pct;
+                })
+                .map(([key, value]) => {
+                  const baseFile = baseSummary[key];
+                  const lineDiff = diffPct(value.lines.pct / 100, baseFile.lines.pct / 100);
+                  return `- **${key}**: ${formatPct(value.lines.pct / 100)} (${lineDiff})`;
+                })
+                .join('\n')}
+            </details>`;
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: commentBody
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: commentBody
+              });
+            } 

@@ -1,0 +1,60 @@
+name: Database Migrations
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'src/db/migrations/**'
+
+jobs:
+  validate-migrations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Validate migrations
+        run: npm run migrations:validate
+
+  migrate-staging:
+    needs: validate-migrations
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run migrations
+        run: npm run migrations:up
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+
+  migrate-production:
+    needs: validate-migrations
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run migrations
+        run: npm run migrations:up
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }} 
