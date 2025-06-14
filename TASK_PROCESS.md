@@ -7,6 +7,17 @@
 - When conflicting priorities exist, default to the order and priority specified in Dart MCP
 - Other task lists (such as in TASK.md) should be kept in sync with Dart MCP, but Dart MCP is authoritative
 
+## Git Workflow Integration
+
+- All development work must follow the Gitflow workflow as defined in `GIT_WORKFLOW.md` and enforced by `CURSOR_RULES.md`
+- Each task requires a dedicated branch created from the appropriate parent branch:
+  - For new features: `feature/[task-id]-task-name` from `develop`
+  - For bug fixes: `bugfix/[task-id]-bug-description` from `develop`
+- Branch names must include the task ID from Dart MCP for traceability
+- When a task is marked as `Doing`, a corresponding branch must be created
+- Pull Requests must be created when tasks are ready for review
+- Tasks should only be marked as `Done` after the corresponding PR is approved and merged
+
 ## Task Status Workflow
 
 1. Tasks begin with status `To-do` (represented as `⬜` in documentation)
