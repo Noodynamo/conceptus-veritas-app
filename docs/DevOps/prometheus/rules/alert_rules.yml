@@ -1,0 +1,140 @@
+groups:
+  - name: infrastructure_alerts
+    rules:
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'High CPU usage on {{ $labels.instance }}'
+          description: 'CPU usage is above 80% for 5 minutes on {{ $labels.instance }}'
+          dashboard_url: 'https://grafana:3000/d/infrastructure'
+
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'High memory usage on {{ $labels.instance }}'
+          description: 'Memory usage is above 85% for 5 minutes on {{ $labels.instance }}'
+          dashboard_url: 'https://grafana:3000/d/infrastructure'
+
+      - alert: DiskSpaceRunningOut
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100 < 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Disk space running out on {{ $labels.instance }}'
+          description: 'Disk space is below 10% on {{ $labels.instance }} mount point {{ $labels.mountpoint }}'
+          dashboard_url: 'https://grafana:3000/d/infrastructure'
+
+      - alert: InstanceDown
+        expr: up == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'Instance {{ $labels.instance }} down'
+          description: '{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 5 minutes'
+          dashboard_url: 'https://grafana:3000/d/infrastructure'
+
+  - name: application_alerts
+    rules:
+      - alert: HighErrorRate
+        expr: sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) * 100 > 5
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'High error rate detected'
+          description: 'Error rate is above 5% for 2 minutes'
+          dashboard_url: 'https://grafana:3000/d/application'
+
+      - alert: SlowResponseTime
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Slow response times detected'
+          description: '95th percentile of response time is above 2 seconds for 5 minutes'
+          dashboard_url: 'https://grafana:3000/d/application'
+
+      - alert: HighAPILatency
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{handler!="prometheus"}[5m])) by (le, handler)) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'High API latency detected for {{ $labels.handler }}'
+          description: '95th percentile of response time is above 1 second for 5 minutes for {{ $labels.handler }}'
+          dashboard_url: 'https://grafana:3000/d/application'
+
+  - name: database_alerts
+    rules:
+      - alert: PostgresHighConnections
+        expr: sum(pg_stat_activity_count) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'High number of PostgreSQL connections'
+          description: 'PostgreSQL instance has more than 80 connections for 5 minutes'
+          dashboard_url: 'https://grafana:3000/d/database'
+
+      - alert: PostgresSlowQueries
+        expr: pg_stat_activity_max_tx_duration > 60
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'PostgreSQL slow queries detected'
+          description: 'PostgreSQL queries are taking more than 60 seconds'
+          dashboard_url: 'https://grafana:3000/d/database'
+
+  - name: redis_alerts
+    rules:
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Redis high memory usage'
+          description: 'Redis memory usage is above 80% for 5 minutes'
+          dashboard_url: 'https://grafana:3000/d/redis'
+
+      - alert: RedisTooManyConnections
+        expr: redis_connected_clients > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Redis too many connections'
+          description: 'Redis has more than 100 client connections for 5 minutes'
+          dashboard_url: 'https://grafana:3000/d/redis'
+
+  - name: ai_service_alerts
+    rules:
+      - alert: AIServiceHighErrorRate
+        expr: sum(rate(ai_router_errors_total[5m])) / sum(rate(ai_router_requests_total[5m])) * 100 > 10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'AI service high error rate'
+          description: 'AI service error rate is above 10% for 5 minutes'
+          dashboard_url: 'https://grafana:3000/d/ai-service'
+
+      - alert: AIServiceHighLatency
+        expr: histogram_quantile(0.95, sum(rate(ai_router_latency_seconds_bucket[5m])) by (le, model)) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'AI service high latency for {{ $labels.model }}'
+          description: '95th percentile of AI service latency is above 5 seconds for {{ $labels.model }}'
+          dashboard_url: 'https://grafana:3000/d/ai-service'

@@ -1,0 +1,87 @@
+groups:
+  - name: infrastructure_recording_rules
+    rules:
+      # CPU usage recording rules
+      - record: instance:node_cpu_utilization:avg_5m
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+
+      # Memory usage recording rules
+      - record: instance:node_memory_utilization:percent
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100
+
+      # Disk usage recording rules
+      - record: instance:node_filesystem_free:percent
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100
+
+  - name: application_recording_rules
+    rules:
+      # Request rate recording rules
+      - record: job:http_requests_total:rate5m
+        expr: sum by(job) (rate(http_requests_total[5m]))
+
+      # Error rate recording rules
+      - record: job:http_errors_total:rate5m
+        expr: sum by(job) (rate(http_requests_total{status=~"5.."}[5m]))
+
+      # Error percentage recording rules
+      - record: job:http_errors:percentage5m
+        expr: sum by(job) (rate(http_requests_total{status=~"5.."}[5m])) / sum by(job) (rate(http_requests_total[5m])) * 100
+
+      # Response time recording rules
+      - record: job:http_request_duration_seconds:p95_5m
+        expr: histogram_quantile(0.95, sum by(job, le) (rate(http_request_duration_seconds_bucket[5m])))
+
+      - record: job:http_request_duration_seconds:p99_5m
+        expr: histogram_quantile(0.99, sum by(job, le) (rate(http_request_duration_seconds_bucket[5m])))
+
+  - name: database_recording_rules
+    rules:
+      # PostgreSQL connection usage recording rules
+      - record: pg_connections:percentage
+        expr: sum(pg_stat_activity_count) / sum(pg_settings_max_connections) * 100
+
+      # PostgreSQL transaction duration recording rules
+      - record: pg_transaction_duration:max
+        expr: max(pg_stat_activity_max_tx_duration)
+
+  - name: redis_recording_rules
+    rules:
+      # Redis memory usage recording rules
+      - record: redis:memory_usage:percentage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes * 100
+
+      # Redis hit rate recording rules
+      - record: redis:keyspace_hit_rate:percentage
+        expr: redis_keyspace_hits_total / (redis_keyspace_hits_total + redis_keyspace_misses_total) * 100
+
+  - name: ai_service_recording_rules
+    rules:
+      # AI service request rate recording rules
+      - record: ai_service:request_rate:5m
+        expr: sum by(model) (rate(ai_router_requests_total[5m]))
+
+      # AI service error rate recording rules
+      - record: ai_service:error_rate:5m
+        expr: sum by(model) (rate(ai_router_errors_total[5m]))
+
+      # AI service error percentage recording rules
+      - record: ai_service:error_percentage:5m
+        expr: sum by(model) (rate(ai_router_errors_total[5m])) / sum by(model) (rate(ai_router_requests_total[5m])) * 100
+
+      # AI service latency recording rules
+      - record: ai_service:latency:p95_5m
+        expr: histogram_quantile(0.95, sum by(model, le) (rate(ai_router_latency_seconds_bucket[5m])))
+
+  - name: dora_metrics_recording_rules
+    rules:
+      # Deployment frequency recording rules
+      - record: dora:deployment_frequency:daily
+        expr: sum(increase(deployments_total{environment="production"}[1d]))
+
+      # Change failure rate recording rules
+      - record: dora:change_failure_rate:percentage
+        expr: sum(increase(deployment_failures_total{environment="production"}[30d])) / sum(increase(deployments_total{environment="production"}[30d])) * 100
+
+      # Lead time for changes recording rules
+      - record: dora:lead_time_minutes:avg_30d
+        expr: avg(lead_time_minutes)

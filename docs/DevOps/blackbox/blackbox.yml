@@ -1,0 +1,75 @@
+modules:
+  http_2xx:
+    prober: http
+    timeout: 5s
+    http:
+      method: GET
+      preferred_ip_protocol: 'ip4'
+      valid_status_codes: [200, 201, 202, 203, 204]
+      fail_if_ssl: false
+      fail_if_not_ssl: false
+      tls_config:
+        insecure_skip_verify: false
+
+  http_post_2xx:
+    prober: http
+    timeout: 5s
+    http:
+      method: POST
+      preferred_ip_protocol: 'ip4'
+      valid_status_codes: [200, 201, 202, 203, 204]
+      fail_if_ssl: false
+      fail_if_not_ssl: false
+      tls_config:
+        insecure_skip_verify: false
+
+  tcp_connect:
+    prober: tcp
+    timeout: 5s
+    tcp:
+      preferred_ip_protocol: 'ip4'
+
+  icmp:
+    prober: icmp
+    timeout: 5s
+    icmp:
+      preferred_ip_protocol: 'ip4'
+
+  dns_lookup:
+    prober: dns
+    timeout: 5s
+    dns:
+      preferred_ip_protocol: 'ip4'
+      query_name: 'conceptusveritas.com'
+      query_type: 'A'
+      valid_rcodes:
+        - NOERROR
+      validate_answer_rrs:
+        fail_if_not_matches_regexp:
+          - "conceptusveritas\\.com\\."
+
+  grpc_health:
+    prober: grpc
+    timeout: 5s
+    grpc:
+      tls: false
+      preferred_ip_protocol: 'ip4'
+      service: 'grpc.health.v1.Health'
+
+  api_health_check:
+    prober: http
+    timeout: 10s
+    http:
+      method: GET
+      headers:
+        Accept: application/json
+      preferred_ip_protocol: 'ip4'
+      valid_status_codes: [200]
+      fail_if_body_not_matches_regexp:
+        - 'status.*ok'
+      fail_if_body_matches_regexp:
+        - 'error'
+      fail_if_ssl: false
+      fail_if_not_ssl: true
+      tls_config:
+        insecure_skip_verify: false

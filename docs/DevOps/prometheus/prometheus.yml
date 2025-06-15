@@ -1,0 +1,93 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+
+  # Attach these labels to any time series or alerts when communicating with
+  # external systems (federation, remote storage, Alertmanager).
+  external_labels:
+    monitor: 'conceptus-veritas-monitor'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+# Load rules once and periodically evaluate them
+rule_files:
+  - 'rules/alert_rules.yml'
+  - 'rules/recording_rules.yml'
+
+# Scrape configurations
+scrape_configs:
+  # Self monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Node exporter for system metrics
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  # PostgreSQL exporter for database metrics
+  - job_name: 'postgres-exporter'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+
+  # Redis exporter for cache metrics
+  - job_name: 'redis-exporter'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+
+  # cAdvisor for container metrics
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+
+  # Backend API metrics
+  - job_name: 'backend-api'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['backend:8000']
+
+  # Frontend metrics (if instrumented)
+  - job_name: 'frontend'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['frontend:19000']
+
+  # Blackbox exporter for endpoint monitoring
+  - job_name: 'blackbox'
+    metrics_path: /probe
+    params:
+      module: [http_2xx] # Use the http_2xx module
+    static_configs:
+      - targets:
+          - http://backend:8000/health # Health check endpoint
+          - http://frontend:19000 # Frontend health check
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # Celery worker metrics
+  - job_name: 'celery-worker'
+    static_configs:
+      - targets: ['celery_worker:8000']
+    metrics_path: '/metrics'
+
+  # Service discovery for dynamic environments (future implementation)
+  # - job_name: 'docker'
+  #   docker_sd_configs:
+  #     - host: unix:///var/run/docker.sock
+  #       refresh_interval: 15s
+  #   relabel_configs:
+  #     - source_labels: [__meta_docker_container_label_prometheus_job]
+  #       regex: (.+)
+  #       target_label: job
