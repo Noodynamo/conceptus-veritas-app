@@ -1,0 +1,156 @@
+# Enhanced Journal Feature User Flows
+
+## Standard Journal Entry Flow
+
+### Entry Point: Journal Main Landing Page
+
+#### Stage 1: Entry Creation & Formatting (3-10 minutes)
+1. User navigates to Journal main landing page
+2. User clicks "New Entry" button
+3. System presents a rich text editor with:
+   - Formatting toolbar (bold, italic, headers, lists, alignment, etc.)
+   - Media attachment options (photo, video, audio, document)
+   - Template selection dropdown
+   - Concept tagging sidebar
+4. User selects a template (optional) or starts with blank entry
+5. User writes content using formatting tools
+6. System performs real-time NLP analysis on text
+7. Concept Badges automatically appear in the sidebar as concepts are detected
+8. User can click on suggested Concept Badges to confirm/reject
+9. User can manually add Concept Badges not detected by the system
+10. User adds attachments via drag-and-drop or file picker
+11. System processes attachments (compression, thumbnail generation)
+12. User can arrange/reposition attachments within the entry
+
+#### Stage 2: Integration with Saved Content (2-5 minutes)
+1. User accesses "Clipboard" sidebar showing recently saved items from other app features
+2. Items are organized by source (Ask AI, Explore, Quest, Forum)
+3. User drags items from Clipboard into the entry
+4. System preserves original context and adds visual indicator of source
+5. User adds personal reflection to the saved content
+6. System suggests connections to existing entries based on concepts
+7. User can create direct links to other entries or saved content
+
+#### Stage 3: Entry Organization & Navigation (1-3 minutes)
+1. User accesses "Past Entries" sidebar
+2. System displays entries organized by:
+   - Recent entries
+   - Concept-related entries (based on detected concepts in current entry)
+   - Chronological view option
+   - Concept filter option
+3. User can click any entry to view in split-screen mode
+4. User can create direct links between current entry and past entries
+5. System suggests potential connections based on concept overlap
+
+#### Stage 4: Publishing & Sharing Options (1-2 minutes)
+1. User clicks "Save Options" button
+2. System presents publishing/sharing options:
+   - Private (default)
+   - Share with specific users
+   - Public with anonymous author
+   - Public with attribution
+3. User selects privacy level and sharing options
+4. User adds optional tags for personal organization
+5. User clicks "Save Entry" button
+6. System confirms save with animation and XP notification
+7. Entry appears in Journal timeline and concept-based visualizations
+
+#### Stage 5: Constellation Mapping (Premium Feature) (3-8 minutes)
+1. User clicks "View in Constellation" button
+2. System displays personal constellation map with new entry highlighted
+3. Related entries and content appear as connected nodes
+4. User can:
+   - Rearrange nodes
+   - Customize connection types
+   - Add annotations to connections
+   - Group related entries into "constellations"
+   - Apply visual themes to the map
+5. User saves customized constellation view
+6. System confirms save with animation and XP notification
+
+## Quick Entry Flow
+
+### Entry Point: Quick Entry Button (Accessible from anywhere in the app)
+
+#### Stage 1: Quick Capture (30 seconds - 2 minutes)
+1. User taps "Quick Entry" button (persistent in app navigation)
+2. System presents streamlined capture interface with:
+   - Text input field (limited formatting)
+   - Mood selector (emoji grid)
+   - Emotion selector (visual representation dropdown)
+   - Quick media capture buttons (photo, audio, short video)
+   - Concept Badge quick-select (most used/relevant concepts)
+3. System automatically adds:
+   - Timestamp
+   - Date stamp
+   - Geolocation (if permitted)
+   - User identification
+4. User types brief entry or records audio note
+5. User selects mood and/or emotions
+6. User captures quick media (optional)
+7. User taps relevant Concept Badges
+
+#### Stage 2: Quick Sharing & Constellation (15-30 seconds)
+1. System presents simplified sharing options:
+   - Private (default)
+   - Quick share with favorites
+   - Add to specific constellation
+2. User selects options with single taps
+3. User taps "Save Quick Entry" button
+4. System confirms save with subtle animation and XP notification
+5. Entry appears in Journal with "Quick Entry" indicator
+6. System offers option to expand entry later
+
+#### Stage 3: Follow-up Prompts (Optional) (30 seconds)
+1. System presents optional follow-up prompts:
+   - "Add more detail later?"
+   - "Set reminder to reflect on this?"
+   - "Connect to related entries?"
+2. User can dismiss or select options
+3. If selected, system schedules appropriate notifications
+
+## Cross-Flow Features
+
+### Real-time Concept Detection
+- NLP processing occurs as user types
+- Concept Badges appear in sidebar with confidence indicator
+- User can confirm/reject suggested concepts
+- System learns from user corrections to improve future suggestions
+
+### Attachment Handling
+- Support for multiple file types:
+  - Images (JPG, PNG, GIF)
+  - Videos (MP4, MOV)
+  - Audio (MP3, WAV)
+  - Documents (PDF, DOCX, TXT)
+  - Links (with preview)
+- Drag-and-drop interface
+- Background uploading with progress indicator
+- Thumbnail generation for visual browsing
+- Inline placement and arrangement
+
+### Template System
+- Pre-designed templates for different entry types:
+  - Daily reflection
+  - Philosophical question exploration
+  - Concept deep-dive
+  - Media-focused memory
+  - Gratitude journal
+- Custom template creation and saving (Premium feature)
+- Template recommendation based on user history
+
+### Navigation & Discovery
+- Sidebar navigation between related entries
+- Concept-based filtering and organization
+- Chronological timeline view
+- Media gallery view
+- Constellation map navigation (Premium)
+- Search with concept and content filters
+
+### Constellation Mapping (Premium)
+- Visual representation of journal entries and saved content
+- Customizable node appearance and connection types
+- Grouping and annotation features
+- Interactive navigation
+- Shareable views (Tier 2 only)
+- Animation of journal growth over time

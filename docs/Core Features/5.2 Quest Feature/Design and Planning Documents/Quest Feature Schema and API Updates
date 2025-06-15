@@ -1,0 +1,271 @@
+# Quest Feature Schema and API Updates
+
+## Overview
+This document outlines the specific schema and API updates required to integrate the refined Quest system with the existing XP system in the Setarcos app.
+
+## Database Schema Updates
+
+### 1. Removed Tables
+- ~~`user_wisdom_xp`~~ - Not needed as we'll use the existing XP system
+
+### 2. Modified Tables
+
+#### `quests` Table
+```sql
+ALTER TABLE quests
+ADD COLUMN skill_tree_structure JSONB DEFAULT '{}',
+ADD COLUMN xp_threshold INTEGER DEFAULT 0,
+ADD COLUMN accessibility_options JSONB DEFAULT '{}';
+```
+
+- `skill_tree_structure`: JSON structure defining the quest skill tree layout
+- `xp_threshold`: Standard XP amount required to unlock this quest
+- `accessibility_options`: JSON object with accessibility settings for this quest
+
+#### `quest_steps` Table
+```sql
+ALTER TABLE quest_steps
+ADD COLUMN node_position JSONB DEFAULT '{}',
+ADD COLUMN connected_nodes JSONB DEFAULT '[]',
+ADD COLUMN concept_links JSONB DEFAULT '[]',
+ADD COLUMN is_challenge_node BOOLEAN DEFAULT FALSE,
+ADD COLUMN bonus_xp INTEGER DEFAULT 0;
+```
+
+- `node_position`: Coordinates for positioning in the skill tree
+- `connected_nodes`: Array of step IDs this node connects to
+- `concept_links`: Array of concept IDs linked to this step
+- `is_challenge_node`: Whether this is a special challenge node
+- `bonus_xp`: Additional XP awarded for challenge nodes
+
+### 3. New Tables
+
+#### `quest_badges` Table
+```sql
+CREATE TABLE quest_badges (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(100) NOT NULL,
+    description TEXT NOT NULL,
+    xp_threshold INTEGER NOT NULL,
+    quest_category VARCHAR(50) NOT NULL,
+    icon_url VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+- Stores badge definitions for quest achievements
+- Uses standard XP thresholds instead of specialized Wisdom XP
+
+#### `user_quest_badges` Table
+```sql
+CREATE TABLE user_quest_badges (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id),
+    badge_id UUID NOT NULL REFERENCES quest_badges(id),
+    earned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, badge_id)
+);
+```
+
+- Tracks which badges users have earned
+
+## API Updates
+
+### 1. Modified Endpoints
+
+#### `POST /api/v1/quests/{id}/start`
+```json
+// Response
+{
+    "success": true,
+    "user_quest_id": "750e8400-e29b-41d4-a716-446655440000",
+    "quest_id": "550e8400-e29b-41d4-a716-446655440000",
+    "status": "in_progress",
+    "current_step": 1,
+    "xp_earned": 5
+}
+```
+
+- Uses standard `xp_earned` field instead of Wisdom XP
+
+#### `POST /api/v1/quests/{id}/steps/{step_id}/complete`
+```json
+// Response
+{
+    "success": true,
+    "step_id": "650e8400-e29b-41d4-a716-446655440001",
+    "status": "completed",
+    "xp_earned": 20,
+    "next_step": {
+        "id": "650e8400-e29b-41d4-a716-446655440002",
+        "step_number": 2,
+        "title": "The Four Cardinal Virtues",
+        "content": "...",
+        "step_type": "multiple_choice",
+        "interaction_data": {
+            "question": "Which of the following is NOT one of the four cardinal virtues in Stoicism?",
+            "options": ["Wisdom", "Justice", "Courage", "Happiness", "Temperance"],
+            "correct_answer": 3
+        },
+        "xp_reward": 25
+    },
+    "quest_progress": {
+        "completed_steps": 1,
+        "total_steps": 5,
+        "percentage": 20
+    },
+    "total_xp": 1250,
+    "xp_to_next_level": 750
+}
+```
+
+- Added `total_xp` and `xp_to_next_level` fields to integrate with standard XP system
+
+### 2. New Endpoints
+
+#### `GET /api/v1/quests/skill-tree`
+```json
+// Response
+{
+    "quests": [
+        {
+            "id": "550e8400-e29b-41d4-a716-446655440000",
+            "title": "Introduction to Stoicism",
+            "description": "...",
+            "xp_threshold": 0,
+            "user_status": "completed",
+            "position": {"x": 100, "y": 200},
+            "connected_quests": ["550e8400-e29b-41d4-a716-446655440001"]
+        },
+        {
+            "id": "550e8400-e29b-41d4-a716-446655440001",
+            "title": "Advanced Stoic Practices",
+            "description": "...",
+            "xp_threshold": 500,
+            "user_status": "locked",
+            "position": {"x": 300, "y": 200},
+            "connected_quests": []
+        }
+    ],
+    "user_xp": 350,
+    "next_unlock": {
+        "quest_id": "550e8400-e29b-41d4-a716-446655440001",
+        "xp_required": 500,
+        "xp_remaining": 150
+    }
+}
+```
+
+- Uses standard `user_xp` field instead of Wisdom XP
+- Shows XP thresholds for unlocking advanced quests
+
+## Integration with Existing XP System
+
+### XP Service Integration
+```python
+# In quest_service.py
+from xp_service import XPService
+
+class QuestService:
+    def __init__(self, db):
+        self.db = db
+        self.xp_service = XPService(db)
+    
+    def start_quest(self, user_id, quest_id):
+        # Create user_quest record
+        user_quest_id = self._create_user_quest(user_id, quest_id)
+        
+        # Award XP for starting quest
+        xp_earned = self.xp_service.award_xp(
+            user_id=user_id,
+            action_type="quest_start",
+            context={"quest_id": quest_id},
+            amount=5
+        )
+        
+        return {
+            "success": True,
+            "user_quest_id": user_quest_id,
+            "quest_id": quest_id,
+            "status": "in_progress",
+            "current_step": 1,
+            "xp_earned": xp_earned
+        }
+    
+    def complete_quest_step(self, user_id, quest_id, step_id, user_response):
+        # Update user_quest_step record
+        self._update_user_quest_step(user_id, quest_id, step_id, user_response)
+        
+        # Get step details
+        step = self._get_step(step_id)
+        
+        # Award XP for completing step
+        xp_earned = self.xp_service.award_xp(
+            user_id=user_id,
+            action_type="quest_step_complete",
+            context={"quest_id": quest_id, "step_id": step_id},
+            amount=step["xp_reward"]
+        )
+        
+        # Check for quest completion
+        if self._is_quest_completed(user_id, quest_id):
+            quest = self._get_quest(quest_id)
+            self.xp_service.award_xp(
+                user_id=user_id,
+                action_type="quest_complete",
+                context={"quest_id": quest_id},
+                amount=quest["xp_reward"]
+            )
+        
+        # Get user's total XP and XP to next level
+        user_xp_info = self.xp_service.get_user_xp_info(user_id)
+        
+        return {
+            "success": True,
+            "step_id": step_id,
+            "status": "completed",
+            "xp_earned": xp_earned,
+            "next_step": self._get_next_step(quest_id, step_id),
+            "quest_progress": self._get_quest_progress(user_id, quest_id),
+            "total_xp": user_xp_info["total_xp"],
+            "xp_to_next_level": user_xp_info["xp_to_next_level"]
+        }
+```
+
+### Celery Task Integration
+```python
+@celery_app.task(name="quests.check_unlockable_quests")
+def check_unlockable_quests(user_id):
+    """Check if user has enough XP to unlock new quests"""
+    db = get_db_connection()
+    quest_service = QuestService(db)
+    xp_service = XPService(db)
+    
+    # Get user's current XP
+    user_xp = xp_service.get_user_total_xp(user_id)
+    
+    # Get quests with XP thresholds
+    locked_quests = quest_service.get_locked_quests_for_user(user_id)
+    
+    # Check for newly unlockable quests
+    newly_unlocked = []
+    for quest in locked_quests:
+        if user_xp >= quest["xp_threshold"]:
+            quest_service.unlock_quest_for_user(user_id, quest["id"])
+            newly_unlocked.append(quest["id"])
+    
+    # Send notifications for newly unlocked quests
+    if newly_unlocked:
+        notification_service = NotificationService(db)
+        for quest_id in newly_unlocked:
+            quest = quest_service.get_quest(quest_id)
+            notification_service.send_notification(
+                user_id=user_id,
+                notification_type="quest_unlocked",
+                title=f"New Quest Unlocked: {quest['title']}",
+                body=f"You've unlocked a new quest: {quest['title']}",
+                data={"quest_id": quest_id}
+            )
+    
+    return newly_unlocked
+```

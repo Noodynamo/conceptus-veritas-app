@@ -1,0 +1,207 @@
+# Quest Feature Integration Index for Master Technical Blueprint
+
+## Overview
+This document provides a comprehensive indexing of the refined Quest system for integration into the Setarcos app master technical blueprint. The integration incorporates the skill tree design, enhanced Concepts integration, accessibility improvements, and cognitive load reductions while maintaining alignment with the existing blueprint structure.
+
+## Integration Index
+
+### 1. Core Definitions and Architecture
+
+#### 1.1 Definitions and Glossary (Section 1.4)
+- Add "Wisdom XP" definition as specialized XP for quest progression
+- Add "Skill Tree" definition for quest navigation structure
+- Add "Challenge Node" definition for special quest steps with bonus rewards
+
+#### 1.2 System Architecture (Section 3.2)
+- Update Section 3.2.5: "Quest Service" with new skill tree management capabilities
+  - Skill tree rendering service
+  - Wisdom XP tracking service
+  - Quest recommendation engine
+
+### 2. Feature Integration
+
+#### 2.1 Quest Core Feature (Section 5.2)
+- Update feature overview to include skill tree design
+- Replace existing user experience flow with refined flow:
+  1. Quest browsing and selection
+  2. Skill tree visualization
+  3. Step completion with Concepts integration
+  4. Progress tracking with Wisdom XP
+- Update technical implementation with new components
+- Add accessibility considerations
+
+#### 2.2 Concepts Integration (Section 5.9)
+- Add quest-concept linking mechanisms
+- Implement concept mastery progression through quest completion
+- Create mini-tree visualization for related concepts
+- Add seamless navigation between quests and concepts
+
+#### 2.3 XP System Integration (Section 6.2)
+- Add Wisdom XP as specialized XP type
+- Update XP rewards structure for quest steps and completion
+- Implement milestone badges for Wisdom XP accumulation
+
+#### 2.4 Accessibility Integration (Section 6.5)
+- Add high-contrast mode for skill tree visualization
+- Implement screen reader support for quest navigation
+- Add voice input for reflections and quiz responses
+- Create audio narration for quest content
+
+### 3. Technical Implementation
+
+#### 3.1 Database Schema Updates (Section 7.2)
+```sql
+-- Update existing quests table
+ALTER TABLE quests
+ADD COLUMN skill_tree_structure JSONB DEFAULT '{}',
+ADD COLUMN wisdom_xp_reward INTEGER DEFAULT 0,
+ADD COLUMN accessibility_options JSONB DEFAULT '{}';
+
+-- Update existing quest_steps table
+ALTER TABLE quest_steps
+ADD COLUMN node_position JSONB DEFAULT '{}',
+ADD COLUMN connected_nodes JSONB DEFAULT '[]',
+ADD COLUMN concept_links JSONB DEFAULT '[]',
+ADD COLUMN is_challenge_node BOOLEAN DEFAULT FALSE,
+ADD COLUMN bonus_xp INTEGER DEFAULT 0;
+
+-- New wisdom_xp table
+CREATE TABLE user_wisdom_xp (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id),
+    total_wisdom_xp INTEGER DEFAULT 0,
+    quest_category VARCHAR(50) NOT NULL,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, quest_category)
+);
+
+-- New quest_badges table
+CREATE TABLE quest_badges (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(100) NOT NULL,
+    description TEXT NOT NULL,
+    wisdom_xp_threshold INTEGER NOT NULL,
+    quest_category VARCHAR(50) NOT NULL,
+    icon_url VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- New user_quest_badges table
+CREATE TABLE user_quest_badges (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id),
+    badge_id UUID NOT NULL REFERENCES quest_badges(id),
+    earned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, badge_id)
+);
+```
+
+#### 3.2 API Endpoints (Section 8.3)
+- Update existing endpoints:
+```
+GET /api/v1/quests - Add skill_tree parameter for tree view
+GET /api/v1/quests/{id} - Include skill tree structure and node positions
+POST /api/v1/quests/{id}/start - Track Wisdom XP initialization
+POST /api/v1/quests/{id}/steps/{step_id}/complete - Award Wisdom XP
+```
+
+- Add new endpoints:
+```
+GET /api/v1/quests/skill-tree - Get full skill tree visualization
+GET /api/v1/users/wisdom-xp - Get user's Wisdom XP across categories
+GET /api/v1/quests/recommended - Get personalized quest recommendations
+POST /api/v1/quests/{id}/concepts/{concept_id}/explore - Track concept exploration from quest
+```
+
+#### 3.3 Frontend Components (Section 6.1)
+- Add new components:
+  - SkillTreeView.tsx - Zoomable skill tree visualization
+  - WisdomXPBar.tsx - Progress indicator for Wisdom XP
+  - QuestNodeComponent.tsx - Individual node in skill tree
+  - ConceptMiniTree.tsx - Mini visualization of related concepts
+  - AccessibilityControls.tsx - Controls for accessibility options
+
+#### 3.4 Celery Tasks (Section 10.3)
+- Add new tasks:
+```python
+@celery_app.task(name="quests.update_wisdom_xp")
+def update_wisdom_xp(user_id, quest_id, xp_amount):
+    """Update user's Wisdom XP for a specific quest category"""
+    # Implementation details
+
+@celery_app.task(name="quests.check_badge_eligibility")
+def check_badge_eligibility(user_id, quest_category):
+    """Check if user is eligible for new badges based on Wisdom XP"""
+    # Implementation details
+
+@celery_app.task(name="quests.update_concept_mastery_from_quest")
+def update_concept_mastery_from_quest(user_id, quest_id, step_id):
+    """Update concept mastery based on quest step completion"""
+    # Implementation details
+```
+
+### 4. User Experience
+
+#### 4.1 Navigation Structure (Section 6.3)
+- Update with bottom tab bar navigation pattern
+- Add modal overlay for QuestStep component
+- Implement seamless navigation between Quests and Concepts
+
+#### 4.2 Accessibility Features (Section 6.5)
+- Add high-contrast mode for skill tree
+- Implement screen reader compatibility
+- Add voice input and navigation
+- Create adjustable text sizes
+- Implement audio narration
+
+### 5. Analytics and Monitoring
+
+#### 5.1 Analytics Integration (Section 11.2)
+- Add Wisdom XP progression metrics
+- Track concept exploration from quests
+- Monitor skill tree navigation patterns
+- Measure accessibility feature usage
+
+### 6. Implementation Plan
+
+#### 6.1 Phase 1: Core Infrastructure
+- Database schema updates
+- Basic API endpoint updates
+- Wisdom XP tracking system
+
+#### 6.2 Phase 2: Frontend Components
+- Skill tree visualization
+- Quest step refinements
+- Wisdom XP bar and badges
+
+#### 6.3 Phase 3: Concepts Integration
+- Concept linking in quest nodes
+- Mini-tree visualization
+- Mastery progression tracking
+
+#### 6.4 Phase 4: Accessibility and Optimization
+- Accessibility features implementation
+- Performance optimization for skill tree
+- Voice input and navigation
+
+## Technical Considerations
+
+1. **Performance Optimization**
+   - Implement progressive loading for large skill trees
+   - Use WebGL for smooth animations and transitions
+   - Cache quest content for offline access
+
+2. **Accessibility Compliance**
+   - Ensure WCAG 2.1 AA compliance for all new components
+   - Test with screen readers and voice navigation
+   - Implement keyboard navigation for all interactive elements
+
+3. **Mobile Optimization**
+   - Ensure touch-friendly targets (minimum 44x44 pixels)
+   - Optimize skill tree for various screen sizes
+   - Implement gesture controls for zooming and navigation
+
+4. **Integration Testing**
+   - Test seamless navigation between Quests and Concepts
+   - Verify Wisdom XP accumulation and badge awards
+   - Validate concept mastery progression from quest completion

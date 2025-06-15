@@ -1,0 +1,796 @@
+5.9 Concepts System Expansion and Integration
+
+Feature Goal: Transform the Concepts system into the central nervous system of the Setarcos app, serving as the primary connective tissue between all features. Create a cohesive, exploratory philosophical experience, fostering community engagement and personalized learning through a deeply integrated concept network.
+
+5.9.1 Core Design Principles
+
+5.9.1.1 Centrality
+Concepts serve as the primary organizing principle for all content and interactions.
+
+5.9.1.2 Discoverability
+Users can explore philosophical ideas through multiple interconnected pathways.
+
+5.9.1.3 Personalization
+The system adapts to user interests and learning patterns.
+
+5.9.1.4 Community
+Shared exploration and contribution around philosophical concepts.
+
+5.9.1.5 Depth
+Progressive layers of understanding from introductory to advanced.
+
+5.9.2 Blueprint Integration
+
+5.9.2.1 Core Definitions (Section 1.4 Update)
+
+Concept: A fundamental philosophical idea or theme serving as a central linking mechanism across all app features. Concepts have definitions, descriptions, relationships, and associated resources.
+
+Concept Mastery: A five-level system tracking user understanding of a concept: Awareness (0-19), Familiarity (20-39), Understanding (40-59), Application (60-79), Expertise (80-100). Mastery is gained through interactions across features.
+
+Concept Relationship: A defined connection between two concepts (e.g., related_to, contrasts_with, part_of, example_of) with varying strength and optional user contributions.
+
+Concept Category: A thematic grouping of concepts (e.g., Ethics, Metaphysics, Epistemology) with associated visual identifiers (color, icon).
+
+5.9.2.2 System Architecture (Section 3.2.10 Addition)
+
+Concepts Service: A dedicated backend service responsible for managing all aspects of the Concepts system.
+
+Components:
+- Concept Extraction Service: Identifies and extracts concepts from text content (user input, AI responses, journal entries).
+- Relationship Mapping Service: Manages and retrieves connections between concepts, calculating relationship strengths.
+- Mastery Tracking Service: Calculates and updates user concept mastery levels based on interactions.
+- Recommendation Engine: Suggests relevant concepts, quests, and resources based on user profile and activity.
+- Contribution Management Service: Handles community contributions (definitions, examples, resources, relationships) including review and verification workflows.
+
+5.9.3 Data Architecture
+
+5.9.3.1 Core Concept Entity (concepts table)
+
+Purpose: Stores the definition and metadata for each philosophical concept.
+
+Schema:
+```sql
+CREATE TABLE concepts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(100) NOT NULL,
+    normalized_name VARCHAR(100) NOT NULL UNIQUE, -- For unique identification and search
+    short_description TEXT NOT NULL,
+    long_description TEXT NOT NULL,
+    etymology TEXT,
+    historical_context TEXT,
+    difficulty_level INTEGER NOT NULL CHECK (difficulty_level BETWEEN 1 AND 5), -- 1=Beginner, 5=Expert
+    parent_category_id UUID REFERENCES concept_categories(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    is_verified BOOLEAN DEFAULT FALSE, -- Indicates if the core definition is admin-verified
+    verification_date TIMESTAMP WITH TIME ZONE,
+    verified_by UUID REFERENCES users(id) -- Admin/Moderator who verified
+);
+
+CREATE INDEX idx_concepts_normalized_name ON concepts(normalized_name);
+CREATE INDEX idx_concepts_difficulty_level ON concepts(difficulty_level);
+CREATE INDEX idx_concepts_parent_category_id ON concepts(parent_category_id);
+```
+
+5.9.3.2 Concept Relationships (concept_relationships table)
+
+Purpose: Defines the connections between different concepts.
+
+Schema:
+```sql
+CREATE TABLE concept_relationships (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    source_concept_id UUID NOT NULL REFERENCES concepts(id),
+    target_concept_id UUID NOT NULL REFERENCES concepts(id),
+    relationship_type VARCHAR(50) NOT NULL, -- e.g., related_to, contrasts_with, prerequisite_for, example_of
+    relationship_strength FLOAT NOT NULL CHECK (relationship_strength BETWEEN 0.0 AND 1.0), -- Calculated or curated strength
+    description TEXT, -- Optional description of the relationship
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    is_verified BOOLEAN DEFAULT FALSE, -- Indicates if the relationship is admin/moderator verified
+    verification_date TIMESTAMP WITH TIME ZONE,
+    verified_by UUID REFERENCES users(id),
+    contributor_id UUID REFERENCES users(id), -- If contributed by a user
+    UNIQUE(source_concept_id, target_concept_id, relationship_type),
+    CHECK (source_concept_id != target_concept_id)
+);
+
+CREATE INDEX idx_concept_relationships_source ON concept_relationships(source_concept_id);
+CREATE INDEX idx_concept_relationships_target ON concept_relationships(target_concept_id);
+CREATE INDEX idx_concept_relationships_type ON concept_relationships(relationship_type);
+```
+
+5.9.3.3 Concept Categories (concept_categories table)
+
+Purpose: Organizes concepts into thematic groups.
+
+Schema:
+```sql
+CREATE TABLE concept_categories (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT NOT NULL,
+    color_hex VARCHAR(7) NOT NULL, -- For UI theming
+    icon_name VARCHAR(50) NOT NULL, -- Reference to an icon asset
+    parent_category_id UUID REFERENCES concept_categories(id), -- For hierarchical categories
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_concept_categories_parent ON concept_categories(parent_category_id);
+```
+
+5.9.3.4 User Concept Interactions (user_concept_interactions table)
+
+Purpose: Logs specific user interactions with concepts across different features.
+
+Schema:
+```sql
+CREATE TABLE user_concept_interactions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id),
+    concept_id UUID NOT NULL REFERENCES concepts(id),
+    interaction_type VARCHAR(50) NOT NULL, -- e.g., view, bookmark, ask_mention, journal_tag, quest_step, forum_post
+    interaction_data JSONB, -- Specific data about the interaction (e.g., reflection text, quest step result)
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    source_feature VARCHAR(50) NOT NULL, -- e.g., ask, journal, quest, explore, forum
+    source_item_id UUID, -- ID of the item within the source feature (e.g., response_id, entry_id, quest_id)
+    xp_earned INTEGER DEFAULT 0, -- XP awarded for this specific interaction
+    UNIQUE(user_id, concept_id, interaction_type, source_feature, source_item_id)
+);
+
+CREATE INDEX idx_user_concept_interactions_user ON user_concept_interactions(user_id);
+CREATE INDEX idx_user_concept_interactions_concept ON user_concept_interactions(concept_id);
+CREATE INDEX idx_user_concept_interactions_type ON user_concept_interactions(interaction_type);
+CREATE INDEX idx_user_concept_interactions_source ON user_concept_interactions(source_feature);
+```
+
+5.9.3.5 Concept Mastery (concept_mastery table)
+
+Purpose: Tracks the user's calculated mastery level for each concept.
+
+Schema:
+```sql
+CREATE TABLE concept_mastery (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id),
+    concept_id UUID NOT NULL REFERENCES concepts(id),
+    mastery_level INTEGER NOT NULL CHECK (mastery_level BETWEEN 0 AND 100) DEFAULT 0,
+    exposure_count INTEGER NOT NULL DEFAULT 0, -- How many times the user has encountered the concept
+    interaction_count INTEGER NOT NULL DEFAULT 0, -- How many meaningful interactions
+    last_interaction_date TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    notes TEXT, -- Optional user notes about their understanding
+    UNIQUE(user_id, concept_id)
+);
+
+CREATE INDEX idx_concept_mastery_user ON concept_mastery(user_id);
+CREATE INDEX idx_concept_mastery_concept ON concept_mastery(concept_id);
+CREATE INDEX idx_concept_mastery_level ON concept_mastery(mastery_level);
+```
+
+5.9.3.6 Concept Resources (concept_resources table)
+
+Purpose: Stores curated or user-contributed resources related to concepts.
+
+Schema:
+```sql
+CREATE TABLE concept_resources (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    concept_id UUID NOT NULL REFERENCES concepts(id),
+    resource_type VARCHAR(50) NOT NULL, -- e.g., article, book_chapter, video, podcast, quote
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    url TEXT, -- URL if external resource
+    content TEXT, -- Content if internal resource (e.g., quote text)
+    author VARCHAR(255),
+    difficulty_level INTEGER NOT NULL CHECK (difficulty_level BETWEEN 1 AND 5),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    is_verified BOOLEAN DEFAULT FALSE, -- Verified by admin/moderator
+    verification_date TIMESTAMP WITH TIME ZONE,
+    verified_by UUID REFERENCES users(id),
+    contributor_id UUID REFERENCES users(id) -- If contributed by a user
+);
+
+CREATE INDEX idx_concept_resources_concept ON concept_resources(concept_id);
+CREATE INDEX idx_concept_resources_type ON concept_resources(resource_type);
+CREATE INDEX idx_concept_resources_difficulty ON concept_resources(difficulty_level);
+```
+
+5.9.3.7 Community Concept Contributions (concept_contributions table)
+
+Purpose: Tracks user suggestions for improving concept definitions, relationships, or resources.
+
+Schema:
+```sql
+CREATE TABLE concept_contributions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id),
+    concept_id UUID NOT NULL REFERENCES concepts(id),
+    contribution_type VARCHAR(50) NOT NULL, -- e.g., definition_update, new_relationship, new_resource, example
+    content JSONB NOT NULL, -- Structured content of the contribution (e.g., {new_description: "..."}, {target_concept_id: "...", relationship_type: "..."})
+    status VARCHAR(20) NOT NULL DEFAULT 'pending', -- pending, approved, rejected
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    reviewed_by UUID REFERENCES users(id), -- Admin/Moderator who reviewed
+    review_date TIMESTAMP WITH TIME ZONE,
+    review_notes TEXT -- Feedback on the review decision
+);
+
+CREATE INDEX idx_concept_contributions_user ON concept_contributions(user_id);
+CREATE INDEX idx_concept_contributions_concept ON concept_contributions(concept_id);
+CREATE INDEX idx_concept_contributions_status ON concept_contributions(status);
+```
+
+5.9.4 Feature Integration
+
+5.9.4.1 Concepts Core Feature
+
+Feature Overview and Goals:
+- Goal: Establish Concepts as the central organizing principle, enabling deep, interconnected exploration of philosophical ideas across all app features.
+- Overview: Users can browse, search, and explore concepts through an interactive map, detailed pages, and integrated links within other features. The system tracks user mastery and provides personalized recommendations.
+
+User Experience and Interaction Flows:
+- Concept Detail Page: Displays name, descriptions, etymology, historical context, category, difficulty, related concepts, resources, community contributions, and user mastery level.
+- Interactive Concept Map (Explore Feature): Visualizes concepts and their relationships, allowing users to navigate the network, filter by category or mastery, and discover new connections.
+- Concept Search: Allows users to search for concepts by name or keyword.
+- Concept Bookmarking: Users can bookmark concepts for later reference.
+- Concept Sharing: Users can share concept pages externally.
+- Community Contributions: Users can suggest improvements to definitions, add examples, propose new relationships, or submit relevant resources.
+
+Technical Implementation:
+- Frontend: Utilizes components like ConceptMap, ConceptDetailPage, ConceptBadge, MasteryIndicator.
+- Backend: Relies heavily on the Concepts Service for data retrieval, relationship calculation, mastery updates, and recommendations.
+- Data: Leverages all defined Concepts-related tables.
+
+Performance Considerations:
+- Caching strategies for concept data and relationship graphs.
+- Efficient rendering of the concept map (potentially using WebGL for large graphs).
+- Optimized database queries for mastery calculation and recommendations.
+- Progressive loading for large datasets.
+
+Analytics Integration:
+- Track concept views, interaction types, time spent on pages.
+- Monitor concept map navigation patterns.
+- Analyze mastery progression rates.
+- Track community contribution volume and approval rates.
+
+5.9.4.2 Ask Feature Integration (Section 5.1 Update)
+
+- Concept Extraction: AI Router automatically identifies concepts in user questions and AI responses.
+- Concept Badges: Display interactive badges for identified concepts within the AI response text.
+- Concept Tooltips: On hover/focus, badges show concept name, short description, and user's mastery level.
+- Click-Through: Clicking a badge navigates to the full Concept Detail Page.
+- Mastery Indicators: Badges visually reflect user's mastery level (e.g., border color, icon variation).
+- Concept History: Log concepts discussed in the conversation history for context.
+- Follow-up Suggestions: Generate concept-based follow-up questions (e.g., "Would you like to explore the relationship between Stoicism and Virtue?").
+
+Implementation Snippet (Conceptual Frontend):
+```javascript
+// Concept Badge Component
+const ConceptBadge = ({ concept, userMastery }) => {
+  const masteryColor = getMasteryColor(userMastery.level);
+  return (
+    <Badge 
+      onClick={() => navigateToConcept(concept.id)}
+      title={`Mastery: ${userMastery.level}/100`}
+      style={{ backgroundColor: concept.category.color, borderColor: masteryColor }}
+    >
+      {concept.name}
+      {/* Optional: Add a small visual mastery indicator */}
+    </Badge>
+  );
+};
+
+// Enhance response text
+function enhanceResponseWithConcepts(responseText, conceptsData, userMasteryData) {
+  let enhancedText = responseText;
+  conceptsData.forEach(concept => {
+    const regex = new RegExp(`\b${concept.name}\b`, 'gi');
+    const mastery = userMasteryData[concept.id] || { level: 0 };
+    enhancedText = enhancedText.replace(regex, (match) => {
+      // Important: Avoid replacing within HTML tags if rendering directly
+      return renderToString(<ConceptBadge concept={concept} userMastery={mastery} />); 
+    });
+  });
+  return enhancedText;
+}
+```
+
+5.9.4.3 Seek Clarity Integration (Section 5.1.1 Update)
+
+- Concept-Specific Pathways: Generate Seek Clarity options tailored to the concepts identified in the AI response (e.g., "Define [Concept]", "Explain the relationship between [Concept A] and [Concept B]", "Show examples of [Concept]").
+- Concept Mastery Challenges: Offer interactive challenges (quizzes, reflection prompts) focused on specific concepts to deepen understanding and increase mastery.
+- Concept Relationship Exploration: Provide pathways to explicitly explore how the discussed concepts connect or contrast.
+
+Implementation Snippet (Conceptual Backend):
+```python
+# Seek Clarity Concept Integration
+def generate_concept_based_pathways(response_id, concepts, user_id):
+    pathways = []
+    primary_concept = concepts[0]
+    user_mastery = get_user_mastery(user_id, primary_concept['id'])
+
+    # Define Concept Pathway
+    pathways.append({
+        'type': 'define_concept',
+        'title': f"Define {primary_concept['name']}",
+        'concept_id': primary_concept['id']
+    })
+
+    # Example Pathway
+    pathways.append({
+        'type': 'show_examples',
+        'title': f"Examples of {primary_concept['name']}",
+        'concept_id': primary_concept['id']
+    })
+
+    # Relationship Pathway (if multiple concepts)
+    if len(concepts) > 1:
+        secondary_concept = concepts[1]
+        pathways.append({
+            'type': 'explore_relationship',
+            'title': f"How does {primary_concept['name']} relate to {secondary_concept['name']}?",
+            'concept_ids': [primary_concept['id'], secondary_concept['id']]
+        })
+
+    # Mastery Challenge Pathway (if mastery < 80)
+    if user_mastery < 80:
+        challenge = generate_mastery_challenge(primary_concept['id'], user_mastery)
+        pathways.append({
+            'type': 'mastery_challenge',
+            'title': f"Challenge: {primary_concept['name']}",
+            'challenge_data': challenge
+        })
+        
+    return pathways
+```
+
+5.9.4.4 Journal Integration (Section 5.3 Update)
+
+- Automatic Concept Tagging: AI analyzes journal entry text to suggest relevant concept tags.
+- Manual Concept Tagging: Users can manually add/remove concept tags to entries.
+- Concept-Based Reflections: Offer guided reflection prompts based on specific concepts (e.g., "Reflect on a time you applied [Concept]").
+- Concept Mastery Tracking: Journaling about a concept contributes to the user's mastery level.
+- Concept Collections/Filtering: Allow users to view all journal entries tagged with a specific concept.
+
+Implementation Snippet (Conceptual Frontend/Backend Interaction):
+```javascript
+// Frontend: Suggest tags after saving entry
+async function saveEntry(entryText) {
+  const savedEntry = await api.post('/api/journal', { content: entryText });
+  const suggestedConcepts = await api.post('/api/concepts/extract', { text: entryText });
+  showTagSuggestions(savedEntry.id, suggestedConcepts);
+}
+
+// Backend: Record interaction when tag is confirmed
+async function confirmTag(journalId, conceptId) {
+  await api.post('/api/concepts/interact', {
+    conceptId,
+    interactionType: 'journal_tag',
+    sourceFeature: 'journal',
+    sourceItemId: journalId
+  });
+  // Trigger mastery update via Celery task
+}
+```
+
+5.9.4.5 Quest Integration (Section 5.4 Update)
+
+- Concept-Based Quests: Design quests focused on exploring specific concepts or relationships between them.
+- Concept Progression: Structure quests in sequences that build understanding of a concept progressively.
+- Mastery-Gated Quests: Unlock advanced quests based on achieving certain concept mastery levels.
+- Concept Exploration Steps: Include quest steps that explicitly require users to interact with the Concept Detail Page or Concept Map.
+- Concept Mastery Rewards: Award significant concept mastery increases upon quest completion.
+
+Implementation Snippet (Conceptual Backend - Quest Generation):
+```python
+# Quest Concept Integration
+class ConceptQuestGenerator:
+    def generate_quest_for_concept(self, concept_id, user_id):
+        concept = self.concept_service.get_concept(concept_id)
+        mastery = self.mastery_service.get_user_mastery(user_id, concept_id)
+        
+        if mastery < 20:
+            quest_difficulty = 'beginner'
+            # Generate introductory steps: definition, simple reflection
+        elif mastery < 60:
+            quest_difficulty = 'intermediate'
+            # Generate steps involving relationships, application examples
+        else:
+            quest_difficulty = 'advanced'
+            # Generate steps involving contrasts, complex scenarios, contribution prompts
+            
+        # ... logic to create quest steps based on difficulty ...
+        
+        quest = create_quest(
+            title=f"Exploring {concept['name']} ({quest_difficulty.capitalize()})",
+            concept_id=concept_id,
+            difficulty=quest_difficulty,
+            steps=generated_steps
+        )
+        return quest
+```
+
+5.9.4.6 Explore Feature Reimagining (Section 5.5 Update)
+
+- Interactive Concept Map: Replace the existing Explore feature with a dynamic, visual map of concepts and their relationships.
+- Visualization: Use graph visualization libraries (e.g., D3.js, Sigma.js, WebGL-based) to render the network.
+- Navigation: Allow users to pan, zoom, and click on nodes (concepts) to view details.
+- Filtering/Highlighting: Enable filtering by category, mastery level, or search term. Highlight paths between selected concepts.
+- Personalization: Center the map initially on concepts relevant to the user's recent activity or interests.
+- Community Layer: Optionally visualize user-contributed relationships or popular exploration paths.
+- Mastery Heatmap: Visually represent the user's mastery levels across the map.
+
+5.9.4.7 Forum Integration (Section 5.6 Update)
+
+- Concept Tagging: Allow tagging forum posts and threads with relevant concepts.
+- Dedicated Concept Forums: Create specific forum sections or channels dedicated to discussing individual concepts or categories.
+- Concept Linking: Automatically link concept mentions in posts to their detail pages.
+- Expert Recognition: Identify and highlight users with high mastery in specific concepts within relevant forum discussions.
+- Concept-Based Filtering: Allow users to filter forum discussions by concept tags.
+
+5.9.5 API Endpoints (Section 8.3 Update)
+
+5.9.5.1 Core Concepts
+- GET /api/v1/concepts: List concepts (paginated, filterable by category, search term).
+- GET /api/v1/concepts/{id}: Get detailed information for a specific concept.
+- GET /api/v1/concepts/search: Search concepts by name/keyword.
+- GET /api/v1/concepts/categories: List all concept categories.
+- GET /api/v1/concepts/{id}/relationships: Get related concepts and relationship details.
+- GET /api/v1/concepts/{id}/resources: Get associated resources.
+
+5.9.5.2 User Interactions & Mastery
+- GET /api/v1/user/concepts/mastery: Get the current user's mastery levels for multiple/all concepts.
+- GET /api/v1/user/concepts/{id}/mastery: Get the current user's mastery for a specific concept.
+- POST /api/v1/concepts/{id}/interact: Log a generic user interaction with a concept (triggers mastery update).
+- GET /api/v1/user/concepts/bookmarks: List user's bookmarked concepts.
+- POST /api/v1/user/concepts/{id}/bookmark: Add/remove a concept bookmark.
+
+5.9.5.3 Community Contributions
+- POST /api/v1/concepts/{id}/contributions: Submit a contribution (definition update, new relationship, resource).
+- GET /api/v1/concepts/contributions/user: List contributions submitted by the current user.
+- GET /api/v1/concepts/contributions/pending: (Admin) List pending contributions for review.
+- PUT /api/v1/concepts/contributions/{contribution_id}/review: (Admin) Approve or reject a contribution.
+
+5.9.5.4 Integration & Exploration
+- GET /api/v1/concepts/explore: Get data for the interactive concept map (potentially with filters).
+- POST /api/v1/concepts/extract: Extract concepts from provided text.
+- GET /api/v1/concepts/recommended: Get personalized concept recommendations for the user.
+- GET /api/v1/concepts/{id}/linked-items: Get items (quests, journal entries, forum posts) linked to a concept.
+
+5.9.6 Celery Tasks (Section 10.3 Update)
+
+5.9.6.1 Concept Extraction
+```python
+@celery_app.task(name="concepts.extract_from_content")
+def extract_concepts_from_content(content_id, content_type, content_text):
+    """Extract concepts from user-generated content"""
+    # Implementation details
+    # 1. Use NLP or pattern matching to identify potential concepts
+    # 2. Match against existing concepts database
+    # 3. Create links between content and identified concepts
+    # 4. Record exposure interactions for the user
+```
+
+5.9.6.2 Mastery Tracking
+```python
+@celery_app.task(name="concepts.update_mastery")
+def update_concept_mastery(user_id, concept_id, interaction_type, interaction_data):
+    """Update user's mastery level for a concept based on interaction"""
+    # Implementation details
+    # 1. Get current mastery level and interaction history
+    # 2. Calculate mastery increase based on interaction type and data
+    # 3. Update mastery level in database
+    # 4. Check for mastery milestones and trigger rewards if needed
+```
+
+5.9.6.3 Recommendation Generation
+```python
+@celery_app.task(name="concepts.generate_recommendations")
+def generate_concept_recommendations(user_id):
+    """Generate personalized concept recommendations"""
+    # Implementation details
+    # 1. Analyze user's concept interaction history
+    # 2. Identify concepts with high engagement but low mastery
+    # 3. Find related concepts to those the user has shown interest in
+    # 4. Generate and store recommendations
+```
+
+5.9.6.4 Relationship Strength Calculation
+```python
+@celery_app.task(name="concepts.calculate_relationship_strength")
+def calculate_relationship_strength(relationship_id):
+    """Updates the strength of a relationship based on user interactions or community validation"""
+    # Implementation details
+    # 1. Analyze user interactions that involve both concepts
+    # 2. Consider community validations and contributions
+    # 3. Update relationship strength metric
+```
+
+5.9.6.5 Contribution Processing
+```python
+@celery_app.task(name="concepts.process_contribution_approval")
+def process_contribution_approval(contribution_id):
+    """Applies an approved community contribution to the main concept data"""
+    # Implementation details
+    # 1. Get contribution details
+    # 2. Apply changes based on contribution type (update definition, add relationship, etc.)
+    # 3. Record contribution history
+    # 4. Award XP to contributor
+```
+
+5.9.7 AI Router Integration (Section 9.3 Update)
+
+5.9.7.1 Concept Extraction Pipeline
+- Add a step in the AI Router pipeline to extract concepts from both user input and AI responses.
+- Implement pattern matching or NLP techniques to identify philosophical concepts.
+- Match extracted terms against the concepts database.
+- Record concept exposures for the user.
+
+5.9.7.2 Context Enhancement
+- Inject identified concepts and user's mastery levels into the context provided to the LLM.
+- Include relevant concept definitions and relationships to improve response accuracy.
+- Provide mastery-appropriate explanations based on the user's understanding level.
+
+5.9.7.3 Response Processing
+- Process the LLM response to identify mentioned concepts.
+- Enhance the response with interactive concept badges.
+- Generate follow-up suggestions based on identified concepts.
+- Trigger mastery updates for concept exposures.
+
+5.9.7.4 Implementation Snippet
+```python
+# AI Router Concept Integration
+def process_response(response_text, user_id):
+    # Extract concepts from response
+    extracted_concepts = concept_extractor.extract(response_text)
+    
+    # Get user's mastery levels for these concepts
+    mastery_levels = get_user_concept_mastery(user_id, [c['id'] for c in extracted_concepts])
+    
+    # Record concept exposures
+    record_concept_exposures(user_id, extracted_concepts, 'ask', response_id)
+    
+    # Enhance response with concept badges
+    enhanced_response = concept_badge_enhancer.enhance(
+        response_text, 
+        extracted_concepts,
+        mastery_levels
+    )
+    
+    # Generate related concepts suggestions
+    related_concepts = get_related_concepts(extracted_concepts, mastery_levels)
+    
+    return {
+        'enhanced_response': enhanced_response,
+        'concepts': extracted_concepts,
+        'related_concepts': related_concepts
+    }
+```
+
+5.9.8 UI Components (Section 6.1 Update)
+
+5.9.8.1 ConceptBadge
+- Purpose: Display an interactive concept reference within text content.
+- Features: Shows concept name, visual category indicator, mastery level indicator.
+- Interactions: Click to navigate to concept detail, hover/focus for tooltip with brief definition.
+- Variants: Inline (within text), standalone (in lists/grids), mini (compact for dense displays).
+
+5.9.8.2 ConceptMap
+- Purpose: Visualize the network of concepts and their relationships.
+- Features: Interactive graph with nodes (concepts) and edges (relationships), zoom/pan controls, filters.
+- Rendering: WebGL for large graphs, SVG for smaller visualizations.
+- Interactions: Click nodes to view details, drag to reposition, highlight paths between concepts.
+
+5.9.8.3 MasteryIndicator
+- Purpose: Visualize a user's mastery level for a concept.
+- Variants: Linear progress bar, radial gauge, color-coded icon, text label.
+- Features: Shows current level (0-100), visual indication of mastery category (Awareness, Familiarity, etc.).
+- Context-sensitive: Size and detail vary based on placement (inline vs. detail view).
+
+5.9.8.4 ConceptDetailCard
+- Purpose: Display summary information for a concept.
+- Content: Name, short description, category, difficulty level, mastery indicator.
+- Usage: Tooltips, search results, recommendation lists.
+- Interactions: Click to navigate to full detail page.
+
+5.9.8.5 ConceptSelector
+- Purpose: UI element for searching and selecting concepts.
+- Features: Autocomplete, category filtering, recently used concepts.
+- Usage: Manual tagging interfaces, search components.
+- Variants: Single-select, multi-select, with/without creation option.
+
+5.9.9 XP System Integration (Section 6.2 Update)
+
+5.9.9.1 Mastery Milestones
+- Awareness Level (1-19): +10 XP when reached
+- Familiarity Level (20-39): +25 XP when reached
+- Understanding Level (40-59): +50 XP when reached
+- Application Level (60-79): +100 XP when reached
+- Expertise Level (80-100): +200 XP when reached
+
+5.9.9.2 Exploration Rewards
+- First view of a concept: +5 XP
+- Viewing concept relationships: +3 XP per session
+- Reading concept resources: +5-15 XP depending on difficulty
+- Completing concept-based quests: +20-100 XP depending on difficulty
+
+5.9.9.3 Contribution Rewards
+- Submitting a contribution: +10 XP
+- Contribution approved: +50 XP
+- First contribution in a category: +25 XP bonus
+- Quality contribution (admin marked): +100 XP bonus
+
+5.9.9.4 Concept Achievements
+- "Concept Explorer": Discover 10 concepts
+- "Concept Enthusiast": Reach Familiarity (20+) with 5 concepts
+- "Concept Scholar": Reach Understanding (40+) with 10 concepts
+- "Concept Master": Reach Expertise (80+) with 5 concepts
+- "Concept Contributor": Have 3 contributions approved
+- "Category Specialist": Reach Understanding (40+) with 5 concepts in the same category
+
+5.9.10 Progression System (Section 6.4 Update)
+
+5.9.10.1 Concept Mastery Badges
+- Category-specific badges for mastery milestones
+- Special badges for mastering difficult concepts
+- Badges for balanced mastery across categories
+- Badges for mastery depth (e.g., "Ethics Expert" for 80+ mastery in 10 Ethics concepts)
+
+5.9.10.2 Concept Explorer Levels
+- Level 1: "Concept Novice" (0-9 concepts explored)
+- Level 2: "Concept Apprentice" (10-24 concepts explored)
+- Level 3: "Concept Explorer" (25-49 concepts explored)
+- Level 4: "Concept Cartographer" (50-99 concepts explored)
+- Level 5: "Philosophical Navigator" (100+ concepts explored)
+
+5.9.10.3 Contributor Recognition
+- "Contributor" badge after first approved contribution
+- "Regular Contributor" status after 5 approved contributions
+- "Expert Contributor" status after 20 approved contributions
+- Concept page attribution for significant contributors
+- Leaderboard recognition for top contributors
+
+5.9.11 Analytics Integration (Section 11.2 Update)
+
+5.9.11.1 Concept Engagement Metrics
+- Views per concept (total and unique users)
+- Interaction rate (interactions/views)
+- Bookmark rate
+- Average time spent on concept pages
+- Click-through rate from concept badges
+
+5.9.11.2 Mastery Progression Metrics
+- Average mastery level per concept
+- Time to reach mastery milestones
+- Distribution of mastery levels across user base
+- Correlation between mastery and feature engagement
+- Mastery growth rate by interaction type
+
+5.9.11.3 Relationship Discovery Metrics
+- Most frequently explored relationships
+- Relationship discovery patterns
+- Path analysis through concept map
+- Correlation between relationship exploration and mastery growth
+
+5.9.11.4 Contribution Metrics
+- Contribution submission rate
+- Approval/rejection rate
+- Time-to-review
+- User retention after contribution
+- Contribution quality by user segment
+
+5.9.12 Performance Monitoring (Section 11.3 Update)
+
+5.9.12.1 API Performance
+- Response time for concept-related endpoints
+- Cache hit/miss rates
+- Query execution time for complex relationship queries
+- Error rates by endpoint
+
+5.9.12.2 Concept Map Performance
+- Initial load time
+- Frame rate during interaction
+- Memory usage
+- Rendering time by graph size
+- User-perceived performance (interaction delay)
+
+5.9.12.3 Extraction Performance
+- Concept extraction time
+- Extraction accuracy
+- False positive/negative rates
+- Processing queue length and latency
+
+5.9.12.4 Database Performance
+- Query execution time for common operations
+- Index effectiveness
+- Connection pool utilization
+- Transaction throughput and latency
+
+5.9.13 Future Considerations (Section 16.3 Update)
+
+5.9.13.1 Advanced Visualization
+- 3D concept maps for spatial exploration
+- Virtual reality concept spaces
+- Temporal visualization of concept mastery growth
+- Alternative visualization metaphors (e.g., concept islands, concept constellations)
+
+5.9.13.2 Machine Learning Enhancements
+- Automated relationship discovery from content analysis
+- Personalized mastery assessment based on interaction quality
+- Concept difficulty auto-calibration based on user performance
+- Semantic clustering of concepts beyond manual categories
+
+5.9.13.3 Personalized Learning
+- Dynamic learning paths based on mastery gaps
+- Adaptive quest generation for concept mastery
+- Personalized concept recommendations based on learning style
+- Spaced repetition system for concept reinforcement
+
+5.9.13.4 Community Features
+- Concept discussion forums
+- Collaborative concept mapping
+- Expert-led concept exploration sessions
+- Concept-based community challenges and competitions
+
+5.9.14 Implementation Phases
+
+5.9.14.1 Phase 1: Core Infrastructure (Weeks 1-4)
+- Database schema implementation (all new tables and extensions)
+- Develop core Concepts Service logic (CRUD for concepts, relationships, categories)
+- Implement basic API endpoints (GET concepts, categories, details)
+- Seed initial concept data (from existing tables + enhancements)
+- Implement concepts.extract_from_content Celery task
+
+5.9.14.2 Phase 2: Basic Integration & Mastery (Weeks 5-8)
+- Integrate concept extraction into AI Router and Ask feature
+- Develop ConceptBadge and ConceptDetailCard UI components
+- Implement concept_mastery table logic and concepts.update_mastery task
+- Integrate basic mastery tracking into Ask and Journal features
+- Develop APIs for user mastery (GET /api/v1/user/concepts/mastery)
+
+5.9.14.3 Phase 3: Explore Feature & Advanced Integration (Weeks 9-12)
+- Develop ConceptMap component and GET /api/v1/concepts/explore API
+- Reimagine Explore feature using the Concept Map
+- Integrate concept linking and mastery into Quest feature
+- Integrate concept tagging/filtering into Forum feature
+- Develop concepts.generate_recommendations task and related APIs
+
+5.9.14.4 Phase 4: Community & Refinement (Weeks 13-16)
+- Implement community contribution features (tables, APIs, forms, review workflow)
+- Develop concept_resources functionality
+- Integrate concept-based XP rewards and achievements
+- Implement advanced accessibility features
+- Conduct performance optimization and analytics integration
+- Refine UI/UX based on testing
+
+5.9.15 Gap Analysis and Recommendations
+
+5.9.15.1 Data Structure Gaps
+- Current tables lack mastery tracking capabilities
+- Relationship types are limited (957 of 958 are "related_to")
+- No support for user contributions or verification
+- Missing concept categories and hierarchical organization
+
+5.9.15.2 Integration Gaps
+- 20 orphaned concepts need relationship mapping
+- Relationship strength metrics needed for meaningful visualization
+- Contribution workflow needs definition
+- Consistent concept linking across features needed
+
+5.9.15.3 Technical Recommendations
+- Implement caching for concept map to improve performance
+- Use WebGL for large-scale concept map visualization
+- Implement progressive loading for concept relationships
+- Optimize database queries for mastery calculations
+- Consider denormalization for frequently accessed concept data
+
+5.9.15.4 Content Recommendations
+- Review and enhance descriptions for all 309 concepts
+- Develop standardized examples for each concept
+- Create visual representations for abstract concepts
+- Expand relationship types beyond simple "related_to"
+- Develop concept difficulty ratings based on prerequisites and complexity

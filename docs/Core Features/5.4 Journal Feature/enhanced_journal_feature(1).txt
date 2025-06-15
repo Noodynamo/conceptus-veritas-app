@@ -1,0 +1,761 @@
+5.4 Journal Feature
+
+Feature Goal: Create a comprehensive personal reflection system that captures multimedia memories, automatically detects philosophical concepts, and visualizes connections through an interactive personal constellation map.
+
+## System Architecture
+
+### Frontend Components
+
+- `JournalScreen.tsx`: Primary journal interface with timeline view and navigation options.
+- `EntryEditor.tsx`: Rich text editor with formatting tools and media attachment capabilities.
+- `QuickEntryModal.tsx`: Streamlined capture interface for rapid journaling from anywhere in the app.
+- `ConceptTaggingSidebar.tsx`: Real-time concept detection and tagging interface.
+- `ClipboardSidebar.tsx`: Access to recently saved items from other app features.
+- `PastEntriesSidebar.tsx`: Navigation of previous entries organized by recency and concept relevance.
+- `MediaGalleryView.tsx`: Visual browsing of multimedia journal content.
+- `TemplateSelector.tsx`: Interface for selecting and applying journal templates.
+- `PersonalConstellationMap.tsx`: Interactive visualization of journal entries and their concept relationships.
+- `MoodEmotionSelector.tsx`: Visual interface for capturing emotional context in entries.
+- `FormattingToolbar.tsx`: Rich text formatting controls for journal entries.
+- `EntryPublishingOptions.tsx`: Privacy and sharing controls for journal content.
+- `JournalNavigationTabs.tsx`: Tab navigation between different journal views (Timeline, Concepts, Media).
+- `ReflectionPromptGenerator.tsx`: AI-powered suggestion system for meaningful reflection.
+
+### Backend Components
+
+- `journal_service.py`: Core service managing journal entries and related operations.
+- `quick_entry_service.py`: Handles streamlined entry creation and metadata attachment.
+- `concept_detection_service.py`: NLP service for real-time concept identification in journal text.
+- `media_processing_service.py`: Handles upload, compression, and organization of multimedia attachments.
+- `constellation_mapping_service.py`: Generates and manages personal concept constellation visualizations.
+- `template_management_service.py`: Handles journal templates and recommendations.
+- `cross_component_integration_service.py`: Manages saving content from other app features to journal.
+- `reflection_prompt_service.py`: Generates contextual prompts based on entry content and user history.
+- `journal_search_service.py`: Provides advanced search across journal entries and concepts.
+- `entry_connection_service.py`: Manages relationships between journal entries and content.
+- `subscription_validation_service.py`: Verifies access to premium journal features based on subscription tier.
+- `offline_sync_service.py`: Manages offline entry creation and synchronization.
+
+### Database Models
+
+```sql
+CREATE TABLE journal_entries (
+  id UUID PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id),
+  title VARCHAR(255),
+  content TEXT NOT NULL,
+  mood VARCHAR(50),
+  emotions JSONB,
+  location JSONB,
+  is_quick_entry BOOLEAN DEFAULT FALSE,
+  privacy_level VARCHAR(50) NOT NULL DEFAULT 'private',
+  template_id UUID REFERENCES journal_templates(id),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+```
+Stores the main content and metadata for journal entries.
+
+```sql
+CREATE TABLE journal_entry_media (
+  id UUID PRIMARY KEY,
+  entry_id UUID NOT NULL REFERENCES journal_entries(id),
+  media_type VARCHAR(50) NOT NULL, -- 'image', 'video', 'audio', 'document'
+  file_path VARCHAR(255) NOT NULL,
+  thumbnail_path VARCHAR(255),
+  position INTEGER,
+  caption TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+```
+Stores media attachments associated with journal entries.
+
+```sql
+CREATE TABLE journal_entry_concepts (
+  id UUID PRIMARY KEY,
+  entry_id UUID NOT NULL REFERENCES journal_entries(id),
+  concept_id UUID NOT NULL REFERENCES concepts(id),
+  confidence_score FLOAT,
+  is_user_confirmed BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(entry_id, concept_id)
+);
+```
+Maps journal entries to concepts from the central Concepts system.
+
+```sql
+CREATE TABLE journal_entry_connections (
+  id UUID PRIMARY KEY,
+  source_entry_id UUID NOT NULL REFERENCES journal_entries(id),
+  target_entry_id UUID NOT NULL REFERENCES journal_entries(id),
+  connection_type VARCHAR(50) NOT NULL, -- 'related', 'continuation', 'response', 'contradiction'
+  user_defined_label VARCHAR(255),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(source_entry_id, target_entry_id)
+);
+```
+Stores user-defined connections between journal entries.
+
+```sql
+CREATE TABLE journal_templates (
+  id UUID PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  content TEXT,
+  is_system BOOLEAN DEFAULT FALSE,
+  created_by_user_id UUID REFERENCES users(id),
+  is_public BOOLEAN DEFAULT FALSE,
+  usage_count INTEGER DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+```
+Stores journal entry templates, both system-provided and user-created.
+
+```sql
+CREATE TABLE journal_cross_component_links (
+  id UUID PRIMARY KEY,
+  entry_id UUID NOT NULL REFERENCES journal_entries(id),
+  source_component VARCHAR(50) NOT NULL, -- 'ask', 'explore', 'quest', 'forum'
+  source_item_id UUID NOT NULL,
+  source_context JSONB,
+  user_reflection TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+```
+Links journal entries to content saved from other app components.
+
+```sql
+CREATE TABLE mind_flow_maps (
+  id UUID PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id),
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  map_data JSONB NOT NULL,
+  is_public BOOLEAN DEFAULT FALSE,
+  view_count INTEGER DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+```
+Stores user-created Mind Flow Maps (premium feature).
+
+```sql
+CREATE TABLE journal_reflection_prompts (
+  id UUID PRIMARY KEY,
+  prompt_text TEXT NOT NULL,
+  prompt_type VARCHAR(50) NOT NULL, -- 'daily', 'concept-based', 'entry-follow-up'
+  related_concept_id UUID REFERENCES concepts(id),
+  is_system BOOLEAN DEFAULT TRUE,
+  created_by_user_id UUID REFERENCES users(id),
+  usage_count INTEGER DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+```
+Stores reflection prompts for journal entries.
+
+## API Endpoints
+
+### GET /api/v1/journal/entries
+
+Request:
+```json
+{
+  "view_type": "timeline", // "timeline", "concepts", "media"
+  "concept_id": "a2f8d724-61c4-4d3f-9ba4-a7c91838230f", // Optional
+  "start_date": "2025-05-01", // Optional
+  "end_date": "2025-06-05", // Optional
+  "limit": 20,
+  "offset": 0
+}
+```
+
+Response:
+```json
+{
+  "entries": [
+    {
+      "id": "b3e9f835-72d5-5e4g-0cb5-d8e24c9f163g",
+      "title": "Morning Reflection on Ethics",
+      "excerpt": "Today I've been thinking about how virtue ethics applies to modern technology use...",
+      "mood": "thoughtful",
+      "emotions": ["curious", "contemplative"],
+      "has_media": true,
+      "media_preview": [
+        {
+          "id": "c4d9e046-83e6-6f5g-1dc6-c9e13b0g054h",
+          "type": "image",
+          "thumbnail_url": "https://..."
+        }
+      ],
+      "concepts": [
+        {
+          "id": "a2f8d724-61c4-4d3f-9ba4-a7c91838230f",
+          "name": "Ethics",
+          "color": "#FF7700"
+        }
+      ],
+      "is_quick_entry": false,
+      "created_at": "2025-06-04T08:30:00Z"
+    }
+    // More entries...
+  ],
+  "total_count": 143,
+  "next_offset": 20
+}
+```
+
+### GET /api/v1/journal/entries/{entry_id}
+
+Request: (No body)
+
+Response:
+```json
+{
+  "entry": {
+    "id": "b3e9f835-72d5-5e4g-0cb5-d8e24c9f163g",
+    "title": "Morning Reflection on Ethics",
+    "content": "Today I've been thinking about how virtue ethics applies to modern technology use...",
+    "mood": "thoughtful",
+    "emotions": ["curious", "contemplative"],
+    "location": {
+      "city": "San Francisco",
+      "country": "USA",
+      "coordinates": {
+        "latitude": 37.7749,
+        "longitude": -122.4194
+      }
+    },
+    "media": [
+      {
+        "id": "c4d9e046-83e6-6f5g-1dc6-c9e13b0g054h",
+        "type": "image",
+        "url": "https://...",
+        "thumbnail_url": "https://...",
+        "position": 1,
+        "caption": "My desk setup while contemplating"
+      }
+    ],
+    "concepts": [
+      {
+        "id": "a2f8d724-61c4-4d3f-9ba4-a7c91838230f",
+        "name": "Ethics",
+        "color": "#FF7700",
+        "is_user_confirmed": true
+      }
+    ],
+    "connected_entries": [
+      {
+        "id": "d5e0f157-94f7-7g6h-2ed7-d0f14c1h165i",
+        "title": "Technology and Mindfulness",
+        "connection_type": "related",
+        "created_at": "2025-06-01T14:20:00Z"
+      }
+    ],
+    "cross_component_links": [
+      {
+        "id": "e6f1g268-05g8-8h7i-3fe8-e1g25d2i276j",
+        "source_component": "ask",
+        "context": {
+          "question": "How does virtue ethics apply to technology use?",
+          "excerpt": "Virtue ethics suggests focusing on developing character traits..."
+        }
+      }
+    ],
+    "template_id": null,
+    "is_quick_entry": false,
+    "privacy_level": "private",
+    "created_at": "2025-06-04T08:30:00Z",
+    "updated_at": "2025-06-04T08:45:00Z"
+  },
+  "reflection_prompts": [
+    {
+      "id": "f7g2h379-16h9-9i8j-4gf9-f2h36e3j387k",
+      "text": "How has your understanding of ethics evolved since your entry on June 1st?"
+    },
+    {
+      "id": "g8h3i480-27i0-0j9k-5hg0-g3i47f4k498l",
+      "text": "Consider how this ethical framework might apply to your upcoming quest on mindfulness."
+    }
+  ]
+}
+```
+
+### POST /api/v1/journal/entries
+
+Request:
+```json
+{
+  "title": "Afternoon Thoughts on Authenticity",
+  "content": "I've been reflecting on what it means to be authentic in today's social media world...",
+  "mood": "reflective",
+  "emotions": ["thoughtful", "concerned"],
+  "is_quick_entry": false,
+  "template_id": null,
+  "concept_ids": ["g8h3i480-27i0-0j9k-5hg0-g3i47f4k498l"],
+  "privacy_level": "private",
+  "location": {
+    "share_precise": false
+  }
+}
+```
+
+Response:
+```json
+{
+  "entry_id": "h9i4j591-38j1-1k0l-6ih1-h4j58g5l509m",
+  "title": "Afternoon Thoughts on Authenticity",
+  "created_at": "2025-06-05T15:30:00Z",
+  "detected_concepts": [
+    {
+      "id": "g8h3i480-27i0-0j9k-5hg0-g3i47f4k498l",
+      "name": "Authenticity",
+      "is_user_confirmed": true
+    },
+    {
+      "id": "i0j5k602-49k2-2l1m-7ji2-i5k69h6m610n",
+      "name": "Social Media",
+      "confidence": 0.85,
+      "is_user_confirmed": false
+    }
+  ],
+  "xp_earned": 5
+}
+```
+
+### POST /api/v1/journal/quick-entries
+
+Request:
+```json
+{
+  "content": "Quick thought about mindfulness during my commute",
+  "mood": "calm",
+  "emotions": ["present", "aware"],
+  "media_data": "base64encodedimage...", // Optional
+  "media_type": "image", // Optional
+  "concept_ids": ["j1k6l713-50l3-3m2n-8kj3-j6l70i7n721o"],
+  "location": {
+    "share_precise": false
+  }
+}
+```
+
+Response:
+```json
+{
+  "entry_id": "k2l7m824-61m4-4n3o-9lk4-k7m81j8o832p",
+  "created_at": "2025-06-05T08:15:00Z",
+  "detected_concepts": [
+    {
+      "id": "j1k6l713-50l3-3m2n-8kj3-j6l70i7n721o",
+      "name": "Mindfulness",
+      "is_user_confirmed": true
+    }
+  ],
+  "follow_up_prompts": [
+    {
+      "id": "l3m8n935-72n5-5o4p-0ml5-l8n92k9p943q",
+      "text": "Would you like to expand on this thought later today?"
+    }
+  ],
+  "xp_earned": 5
+}
+```
+
+### POST /api/v1/journal/entries/{entry_id}/media
+
+Request:
+```json
+{
+  "media_data": "base64encodedmedia...",
+  "media_type": "video",
+  "position": 2,
+  "caption": "Video reflection on my meditation practice"
+}
+```
+
+Response:
+```json
+{
+  "media_id": "m4n9o046-83o6-6p5q-1nm6-m9n03l0q054r",
+  "entry_id": "b3e9f835-72d5-5e4g-0cb5-d8e24c9f163g",
+  "url": "https://...",
+  "thumbnail_url": "https://...",
+  "position": 2,
+  "xp_earned": 5
+}
+```
+
+### POST /api/v1/journal/entries/{entry_id}/concepts
+
+Request:
+```json
+{
+  "concept_id": "n5o0p157-94p7-7q6r-2op7-n0o14p1q165s",
+  "is_confirmed": true
+}
+```
+
+Response:
+```json
+{
+  "entry_id": "b3e9f835-72d5-5e4g-0cb5-d8e24c9f163g",
+  "concept": {
+    "id": "n5o0p157-94p7-7q6r-2op7-n0o14p1q165s",
+    "name": "Stoicism",
+    "color": "#3366CC"
+  },
+  "is_user_confirmed": true,
+  "xp_earned": 2
+}
+```
+
+### POST /api/v1/journal/entries/{entry_id}/connections
+
+Request:
+```json
+{
+  "target_entry_id": "o6p1q268-05q8-8r7s-3pq8-o1p25q2r276t",
+  "connection_type": "continuation",
+  "user_defined_label": "Continuing my thoughts on virtue ethics"
+}
+```
+
+Response:
+```json
+{
+  "connection_id": "p7q2r379-16r9-9s8t-4qr9-p2q36r3s387u",
+  "source_entry": {
+    "id": "b3e9f835-72d5-5e4g-0cb5-d8e24c9f163g",
+    "title": "Morning Reflection on Ethics"
+  },
+  "target_entry": {
+    "id": "o6p1q268-05q8-8r7s-3pq8-o1p25q2r276t",
+    "title": "Further Thoughts on Virtue Ethics"
+  },
+  "connection_type": "continuation",
+  "xp_earned": 8
+}
+```
+
+### GET /api/v1/journal/constellation
+
+Request:
+```json
+{
+  "central_concept_id": "a2f8d724-61c4-4d3f-9ba4-a7c91838230f", // Optional
+  "central_entry_id": "b3e9f835-72d5-5e4g-0cb5-d8e24c9f163g", // Optional
+  "depth": 2, // How many connections to traverse
+  "include_cross_component": true // Include links to other app components
+}
+```
+
+Response:
+```json
+{
+  "nodes": [
+    {
+      "id": "b3e9f835-72d5-5e4g-0cb5-d8e24c9f163g",
+      "type": "entry",
+      "title": "Morning Reflection on Ethics",
+      "preview": "Today I've been thinking about...",
+      "created_at": "2025-06-04T08:30:00Z",
+      "has_media": true,
+      "concepts": ["Ethics", "Virtue"]
+    },
+    {
+      "id": "a2f8d724-61c4-4d3f-9ba4-a7c91838230f",
+      "type": "concept",
+      "name": "Ethics",
+      "color": "#FF7700",
+      "entry_count": 24
+    }
+    // More nodes...
+  ],
+  "connections": [
+    {
+      "source": "b3e9f835-72d5-5e4g-0cb5-d8e24c9f163g",
+      "target": "a2f8d724-61c4-4d3f-9ba4-a7c91838230f",
+      "type": "has_concept",
+      "strength": 0.9
+    }
+    // More connections...
+  ],
+  "clusters": [
+    {
+      "central_node": "a2f8d724-61c4-4d3f-9ba4-a7c91838230f",
+      "node_ids": ["b3e9f835-72d5-5e4g-0cb5-d8e24c9f163g", "d5e0f157-94f7-7g6h-2ed7-d0f14c1h165i"]
+    }
+    // More clusters...
+  ]
+}
+```
+
+### POST /api/v1/journal/mind-flow-maps
+
+Request:
+```json
+{
+  "name": "My Ethical Framework",
+  "description": "Personal map of how different ethical concepts relate in my thinking",
+  "map_data": {
+    "nodes": [
+      {
+        "id": "node1",
+        "type": "concept",
+        "concept_id": "a2f8d724-61c4-4d3f-9ba4-a7c91838230f",
+        "position": {"x": 100, "y": 150},
+        "size": 2
+      }
+      // More nodes...
+    ],
+    "connections": [
+      {
+        "source": "node1",
+        "target": "node2",
+        "type": "builds_on",
+        "label": "Foundation"
+      }
+      // More connections...
+    ]
+  },
+  "is_public": false
+}
+```
+
+Response:
+```json
+{
+  "map_id": "q8r3s480-27s0-0t9u-5rs0-q3r47s4t498v",
+  "name": "My Ethical Framework",
+  "created_at": "2025-06-05T16:00:00Z",
+  "node_count": 12,
+  "connection_count": 18,
+  "xp_earned": 25,
+  "premium_tier_limit": {
+    "current_maps": 1,
+    "max_maps": 3,
+    "current_nodes": 12,
+    "max_nodes_per_map": 25
+  }
+}
+```
+
+### POST /api/v1/journal/save-from-component
+
+Request:
+```json
+{
+  "source_component": "ask",
+  "source_item_id": "r9s4t591-38t1-1u0v-6st1-r4s58t5u509w",
+  "source_context": {
+    "question": "What are the key principles of Stoicism?",
+    "answer_excerpt": "Stoicism emphasizes virtue, rationality, and acceptance of what we cannot control..."
+  },
+  "user_reflection": "This answer helped me understand how Stoicism might apply to my daily challenges",
+  "concept_ids": ["s0t5u602-49u2-2v1w-7tu2-s5t69u6v610x"]
+}
+```
+
+Response:
+```json
+{
+  "entry_id": "t1u6v713-50v3-3w2x-8uv3-t6u70v7w721y",
+  "title": "Reflection on Stoicism from Ask AI",
+  "created_at": "2025-06-05T16:30:00Z",
+  "detected_concepts": [
+    {
+      "id": "s0t5u602-49u2-2v1w-7tu2-s5t69u6v610x",
+      "name": "Stoicism",
+      "is_user_confirmed": true
+    }
+  ],
+  "xp_earned": 13
+}
+```
+
+### GET /api/v1/journal/templates
+
+Request:
+```json
+{
+  "include_system": true,
+  "include_user": true,
+  "include_public": false
+}
+```
+
+Response:
+```json
+{
+  "templates": [
+    {
+      "id": "u2v7w824-61w4-4x3y-9vw4-u7v81w8x832z",
+      "name": "Daily Reflection",
+      "description": "Template for end-of-day reflection with prompts for gratitude and lessons learned",
+      "is_system": true,
+      "preview": "Today I am grateful for...\nA challenge I faced was...\nA lesson I learned...",
+      "usage_count": 1243
+    },
+    {
+      "id": "v3w8x935-72x5-5y4z-0wx5-v8w92x9y943a",
+      "name": "Concept Deep-Dive",
+      "description": "Template for exploring a philosophical concept in depth",
+      "is_system": true,
+      "preview": "Concept: [Concept Name]\nMy current understanding...\nQuestions I have...\nReal-world applications...",
+      "usage_count": 587
+    }
+    // More templates...
+  ]
+}
+```
+
+## User Experience Flow
+
+### Stage 1: Standard Entry Creation (3-10 minutes)
+User navigates to the Journal main landing page and clicks "New Entry." The system presents a rich text editor with formatting toolbar, media attachment options, template selection, and concept tagging sidebar. User selects a template (or starts blank) and begins writing. As they type, the system performs real-time NLP analysis, automatically suggesting Concept Badges in the sidebar. User confirms relevant concepts with a click and adds a few of their own. User adds photos from their recent meditation retreat via drag-and-drop, and the system processes them in the background while they continue writing. User arranges the photos within the entry and adds captions.
+
+### Stage 2: Integration with Saved Content (2-5 minutes)
+While writing, user remembers a relevant insight from an Ask AI conversation. They access the "Clipboard" sidebar showing recently saved items from other app features. User finds the AI response about mindfulness and drags it into their entry. The system preserves the original context with a visual indicator of the source. User adds their personal reflection on how the AI insight connects to their meditation experience. The system suggests connections to existing entries based on the mindfulness concept, and user creates a direct link to a previous entry about their meditation practice.
+
+### Stage 3: Quick Entry Creation (30 seconds - 2 minutes)
+Later that day, user has a sudden insight while on a walk. They tap the "Quick Entry" button (accessible from anywhere in the app). The system presents a streamlined capture interface with a text field, mood selector (emoji grid), emotion selector, quick media buttons, and concept badge quick-select. User types a brief note, selects "Inspired" mood and "Clarity" emotion, takes a quick photo of their surroundings, and taps the "Mindfulness" concept badge. The system automatically adds timestamp, date, and approximate location. User taps "Save Quick Entry," and the system confirms with a subtle animation and XP notification.
+
+### Stage 4: Entry Organization & Navigation (1-3 minutes)
+The next day, user returns to Journal to expand on their quick entry. They access the "Past Entries" sidebar, which displays entries organized by recency and concept relevance. User filters by the "Mindfulness" concept and finds both their quick entry and previous meditation entries. They click the quick entry to expand it into a full entry, adding more detailed reflections and connecting it to their meditation journal entry. The system suggests potential connections based on concept overlap, and user creates a thread between related entries.
+
+### Stage 5: Constellation Mapping (Premium Feature) (3-8 minutes)
+User clicks "View in Constellation" to see their journal visualized as an interactive concept map. Their entries appear as nodes connected to concept nodes, with line thickness indicating relationship strength. User notices a cluster forming around mindfulness-related entries and decides to create a custom Mind Flow Map. They select relevant entries and concepts, arrange them in a meaningful pattern, customize node colors, and set connection types. User saves the map and earns XP for the creation.
+
+### Stage 6: Quick Entry Follow-up (1-3 minutes)
+User receives a notification suggesting they expand on a quick entry from yesterday. They tap the notification, which takes them directly to the quick entry with a prompt asking if they want to add more detail. User converts it to a standard entry, adds formatting and additional thoughts, and connects it to their Mind Flow Map. The system awards additional XP for the expanded reflection.
+
+### Stage 7: Navigating the Journal (Ongoing)
+User explores their journal using different views: viewing the constellation map to see concept clusters, scrolling the timeline for chronological flow, or filtering by the "Mindfulness" concept to review all related entries. User uses the Media Gallery to find specific photos from their meditation retreat. User accesses "My Mind Flow Maps" to review and edit their personal concept maps, making adjustments as their understanding evolves.
+
+## Gamification & XP Integration
+
+| Action | XP Reward | Conditions |
+|--------|-----------|------------|
+| Create Text Entry | +5 XP | Basic text entry creation |
+| Create Multimedia Entry | +10 XP | Entry includes photo, video, audio, or doc |
+| Create Quick Entry | +3 XP | Using the streamlined quick entry feature |
+| Expand Quick Entry | +5 XP | Converting a quick entry to full entry |
+| Add Reflection to Saved Content | +5 XP | Adding personal thoughts to content saved from other components |
+| Link Concept to Entry | +2 XP | Per concept linked (up to 5 per entry) |
+| Connect Two Entries | +8 XP | Creating a direct connection between entries |
+| Create Mind Flow Map (Premium) | +25 XP | First creation of a map |
+| Add Node to Mind Map (Premium) | +1 XP | Per node added (up to tier limit) |
+| Share Mind Flow Map (Tier 2) | +15 XP | Making a map public |
+| Reflection Streak (Daily) | +10 XP | Journaling for 3 consecutive days |
+| Memory Weaver (Weekly) | +20 XP | Creating 3+ multimedia entries in a week |
+
+### Badges
+- **Novice Scribe**: Create 10 journal entries
+- **Multimedia Chronicler**: Create 5 multimedia entries
+- **Quick Thinker**: Create 20 quick entries
+- **Concept Connector**: Link 50 concepts across entries
+- **Thread Weaver**: Create 10 connections between entries
+- **Cosmos Architect (Premium)**: Create 3 Mind Flow Maps
+- **Consistent Reflector**: Maintain a 7-day journaling streak
+- **Media Master**: Include all media types (photo, video, audio, document) in journal
+
+## Advanced Workflows / Contextual Prompting
+
+### AI-Powered Reflection Prompts
+- System analyzes entry content, linked concepts, and user history
+- Generates 2-3 highly relevant prompts (e.g., "How does this [Concept] apply to your recent [Quest]?", "Contrast this feeling with your entry on [Date] about [Related Concept].")
+- Prompts appear after entry completion or during follow-up notifications
+- User can save favorite prompts for future use
+
+### Philosophical Thread Detection
+- Backend task analyzes entry connections and concept tags
+- Identifies recurring themes or evolving understanding
+- Notifies user: "We've detected a growing thread around [Concept]. Would you like to explore it?"
+- Offers visualization of thought evolution over time
+
+### Concept Discovery via Journaling
+- NLP analysis of user's free-form text
+- Suggests potential new concept links: "Your writing seems related to [New Concept]. Link it?"
+- Confidence indicators show system certainty about suggestions
+- User confirmations improve future detection accuracy
+
+### Cross-Component Contextualization
+- When saving from Ask AI, prompt might be: "How does this AI insight relate to your recent Explore discovery of [Concept]?"
+- When saving from Quest, prompt might be: "Reflect on how overcoming this challenge strengthened your understanding of [Quest Concept]."
+- When saving from Forum, prompt might be: "How does this discussion connect to your personal reflection on [Journal Concept]?"
+- Contextual prompts adapt based on source component and content
+
+### Quick Entry Expansion Prompts
+- System identifies quick entries with potential for deeper reflection
+- Sends follow-up notification at appropriate time (e.g., evening of same day)
+- Suggests specific aspects to expand upon based on content and concepts
+- Offers template selection for structured expansion
+
+## Implementation Considerations
+
+### Multimedia Storage & Performance
+- Utilize AWS S3 for scalable media storage with CloudFront CDN for delivery
+- Implement client-side compression before upload to reduce bandwidth usage
+- Generate multiple resolution thumbnails for efficient gallery browsing
+- Use background uploading with progress indicators for large files
+- Implement lazy loading for media-heavy entries and galleries
+
+### Real-time Concept Detection
+- Optimize NLP processing for minimal latency during typing
+- Implement debouncing to avoid excessive API calls during rapid typing
+- Consider on-device processing for initial concept suggestions
+- Provide clear visual feedback on detection confidence
+- Ensure system learns from user corrections to improve accuracy
+
+### Cross-Feature Integration
+- Maintain consistent data structures for saved content across features
+- Preserve original context when saving from other components
+- Implement unified search across journal and saved content
+- Ensure bidirectional navigation between journal and source components
+- Use consistent visual language for cross-component references
+
+### Offline Support
+- Enable full journal functionality offline with background sync
+- Queue media uploads for when connection is restored
+- Implement conflict resolution for entries modified on multiple devices
+- Store recent entries and frequently accessed media locally
+- Provide clear sync status indicators
+
+### Premium Feature Implementation
+- Implement feature flagging based on subscription tier
+- Gracefully handle downgrade scenarios (preserve data but limit editing)
+- Provide clear upgrade prompts at premium feature boundaries
+- Implement usage tracking for tiered limits (e.g., Mind Flow Map count)
+- Ensure core journaling experience remains robust for free tier
+
+## Implementation Phases
+
+### Phase 1: Core Journaling (Weeks 1-4)
+- Implement basic text entry creation, editing, viewing (Timeline view)
+- Develop Quick Entry functionality with mood/emotion selection
+- Set up core database models (`journal_entries`, `journal_entry_concepts`)
+- Build core API endpoints for CRUD operations
+- Implement basic concept linking and detection
+
+### Phase 2: Cross-Component & Multimedia (Weeks 5-8)
+- Implement "Save to Journal" from Ask AI, Explore, and other components
+- Add multimedia support (photo, video, audio upload/viewing)
+- Implement `journal_entry_media` and `journal_cross_component_links` tables
+- Develop Media Gallery view
+- Create Clipboard sidebar for accessing saved content
+
+### Phase 3: Entry Connections & Templates (Weeks 9-12)
+- Implement entry connection system and thread visualization
+- Develop template system with default and custom templates
+- Add `journal_entry_connections` and `journal_templates` tables
+- Enhance concept detection with confidence indicators
+- Implement follow-up prompts for quick entries
+
+### Phase 4: Mind Flow Maps & Premium Features (Weeks 13-16)
+- Build Personal Mind Flow Map Creator
+- Implement constellation visualization of journal entries
+- Develop `mind_flow_maps` table and related APIs
+- Integrate subscription checks and tiered feature access
+- Add sharing functionality for Mind Flow Maps (Tier 2)
+- Refine gamification and advanced prompts

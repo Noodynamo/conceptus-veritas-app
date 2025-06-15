@@ -1,0 +1,448 @@
+5.4 Journal Feature
+
+Feature Goal: Serve as a multimedia memoir-building hub that connects all app components through the Concepts system, allowing users to weave AI insights, quest progress, explorations, and forum discussions into their personal philosophical narrative.
+
+## System Architecture
+
+### Frontend Components
+
+- `JournalHomeScreen.tsx`: Main view displaying the user's journal entries through various visualizations (Constellation, Timeline, etc.).
+- `JournalEntryEditor.tsx`: Component for creating and editing journal entries, including text, media uploads, and concept linking.
+- `MediaUploader.tsx`: Handles uploading and previewing photos, videos, voice notes, and documents.
+- `ConceptLinker.tsx`: Interface for tagging journal entries with relevant concepts from the Concepts system.
+- `JournalViewToggle.tsx`: Allows users to switch between different journal views (Constellation Map, Timeline River, Concept Orbits, Media Gallery, My Cosmos Maps).
+- `CosmosBuilder.tsx`: Premium feature component for creating and editing Personal Mind Flow Maps.
+- `ReflectionPromptGenerator.tsx`: Displays AI-suggested reflection prompts based on entry content.
+- `PhilosophicalThreadVisualizer.tsx`: Renders visual connections between related journal entries.
+- `CrossComponentSaveModal.tsx`: Modal overlay for quick reflections when saving content from other components.
+- `TieredFeatureGate.tsx`: Controls access to premium Journal features (like CosmosBuilder) based on user subscription tier.
+
+### Backend Components
+
+- `journal_service.py`: Core service managing journal entries, concepts linking, and visualizations.
+- `media_handler.py`: Processes uploads, performs compression, and manages media storage (likely interacting with AWS S3).
+- `concept_integration_service.py`: Handles automatic concept tagging and linking with the central Concepts system.
+- `cross_component_linker.py`: Manages saving and contextualizing content from Ask AI, Quest, Explore, and Forum.
+- `mind_flow_map_service.py`: Manages creation, storage, and sharing of Personal Mind Flow Maps (premium feature).
+- `reflection_engine.py`: Generates AI-powered reflection prompts and detects philosophical threads.
+- `journal_analytics.py`: Tracks journaling frequency, concept engagement, and media usage.
+- `subscription_service_integration.py`: Checks user subscription tier to manage access to premium features.
+
+### Database Models
+
+```sql
+CREATE TABLE journal_entries (
+  id UUID PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id),
+  title VARCHAR(255),
+  content TEXT NOT NULL,
+  entry_type VARCHAR(50) DEFAULT 'text', -- 'text', 'media', 'mind_flow_map'
+  mood VARCHAR(50),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+```
+Stores the main content of each journal entry.
+
+```sql
+CREATE TABLE journal_entry_media (
+  id UUID PRIMARY KEY,
+  entry_id UUID NOT NULL REFERENCES journal_entries(id),
+  media_type VARCHAR(50) NOT NULL, -- 'photo', 'video', 'audio', 'document'
+  storage_url TEXT NOT NULL, -- e.g., S3 URL
+  thumbnail_url TEXT,
+  duration INTEGER, -- for video/audio
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+```
+Links multimedia files to journal entries.
+
+```sql
+CREATE TABLE journal_entry_concepts (
+  id UUID PRIMARY KEY,
+  entry_id UUID NOT NULL REFERENCES journal_entries(id),
+  concept_id UUID NOT NULL REFERENCES concepts(id),
+  relevance_score FLOAT DEFAULT 1.0,
+  is_primary BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(entry_id, concept_id)
+);
+```
+Maps journal entries to concepts from the central Concepts system.
+
+```sql
+CREATE TABLE journal_entry_connections (
+  id UUID PRIMARY KEY,
+  source_entry_id UUID NOT NULL REFERENCES journal_entries(id),
+  target_entry_id UUID NOT NULL REFERENCES journal_entries(id),
+  connection_type VARCHAR(50) DEFAULT 'related',
+  strength FLOAT DEFAULT 0.5,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(source_entry_id, target_entry_id)
+);
+```
+Stores connections (philosophical threads) between journal entries.
+
+```sql
+CREATE TABLE journal_cross_component_links (
+  id UUID PRIMARY KEY,
+  entry_id UUID NOT NULL REFERENCES journal_entries(id),
+  source_component VARCHAR(50) NOT NULL, -- 'ask_ai', 'quest', 'explore', 'forum'
+  source_content_id UUID NOT NULL, -- ID of the original content (e.g., interaction_id, quest_id)
+  source_context JSONB, -- Stored context from the source component
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+```
+Links journal entries back to the original content from other app components.
+
+```sql
+CREATE TABLE mind_flow_maps (
+  id UUID PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id),
+  entry_id UUID NOT NULL REFERENCES journal_entries(id) UNIQUE, -- Links map to a journal entry
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  map_data JSONB NOT NULL, -- Stores nodes, connections, layout
+  is_public BOOLEAN DEFAULT FALSE,
+  share_token VARCHAR(64) UNIQUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+```
+Stores user-created Personal Mind Flow Maps (premium feature).
+
+## API Endpoints
+
+### POST /api/v1/journal/entries
+
+Request:
+```json
+{
+  "title": "Reflections on Sunset",
+  "content": "The colors reminded me of the fleeting nature of beauty...",
+  "mood": "contemplative",
+  "concept_ids": ["a2f8d724-61c4-4d3f-9ba4-a7c91838230f", "c4d9e046-83e6-6f5g-1dc6-c9e13b0g054h"],
+  "media_attachments": [
+    {
+      "media_type": "photo",
+      "storage_url": "s3://bucket/user/photo123.jpg"
+    }
+  ],
+  "source_component": "explore", // Optional: if saved from another component
+  "source_content_id": "e8f7d6c5-b4a3-2b1c-0d9e-8f7d6c5b4a3" // Optional
+}
+```
+
+Response:
+```json
+{
+  "entry_id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+  "title": "Reflections on Sunset",
+  "created_at": "2025-06-04T16:00:00Z",
+  "concepts_linked": [
+    {
+      "id": "a2f8d724-61c4-4d3f-9ba4-a7c91838230f",
+      "name": "Aesthetics"
+    },
+    {
+      "id": "c4d9e046-83e6-6f5g-1dc6-c9e13b0g054h",
+      "name": "Existentialism"
+    }
+  ],
+  "xp_earned": 10
+}
+```
+
+### GET /api/v1/journal/entries
+
+Request:
+```json
+{
+  "limit": 20,
+  "offset": 0,
+  "sort_by": "created_at",
+  "sort_order": "desc",
+  "filter_by_concept": "a2f8d724-61c4-4d3f-9ba4-a7c91838230f", // Optional
+  "filter_by_media_type": "photo", // Optional
+  "filter_by_source": "ask_ai" // Optional
+}
+```
+
+Response:
+```json
+{
+  "entries": [
+    {
+      "id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+      "title": "Reflections on Sunset",
+      "excerpt": "The colors reminded me...",
+      "created_at": "2025-06-04T16:00:00Z",
+      "concepts": [{"id": "...", "name": "Aesthetics"}],
+      "media_count": 1,
+      "source_component": "explore"
+    },
+    // More entries...
+  ],
+  "total_count": 55,
+  "next_offset": 20
+}
+```
+
+### GET /api/v1/journal/entries/{entry_id}
+
+Request: (No body)
+
+Response:
+```json
+{
+  "entry": {
+    "id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+    "title": "Reflections on Sunset",
+    "content": "The colors reminded me of the fleeting nature of beauty...",
+    "mood": "contemplative",
+    "created_at": "2025-06-04T16:00:00Z",
+    "updated_at": "2025-06-04T16:05:00Z",
+    "concepts": [
+      {"id": "a2f8d724-61c4-4d3f-9ba4-a7c91838230f", "name": "Aesthetics"}
+    ],
+    "media": [
+      {"id": "...", "media_type": "photo", "url": "..."}
+    ],
+    "connections": [
+      {"target_entry_id": "...", "connection_type": "related"}
+    ],
+    "source_link": {
+      "component": "explore",
+      "content_id": "..."
+    }
+  }
+}
+```
+
+### PUT /api/v1/journal/entries/{entry_id}
+
+Request: (Similar to POST /entries, with updated fields)
+
+Response: (Similar to GET /entries/{entry_id})
+
+### DELETE /api/v1/journal/entries/{entry_id}
+
+Request: (No body)
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Journal entry deleted successfully."
+}
+```
+
+### POST /api/v1/journal/mind-maps
+
+Request:
+```json
+{
+  "title": "My Personal Ethics Map",
+  "description": "Mapping my thoughts on moral responsibility.",
+  "map_data": { ... } // JSON representing nodes, connections, layout
+}
+```
+
+Response:
+```json
+{
+  "map_id": "f0e1d2c3-b4a5-6b7c-8d9e-0f1e2d3c4b5a",
+  "entry_id": "9z8y7x6w-5v4u-3t2s-1r0q-9p8o7n6m5l4k", // ID of the associated journal entry
+  "title": "My Personal Ethics Map",
+  "created_at": "2025-06-04T16:10:00Z",
+  "xp_earned": 25
+}
+```
+*(Note: Access to this endpoint requires Tier 1 or Tier 2 subscription. Tier 1 has limitations on map complexity/count enforced by the backend.)*
+
+### GET /api/v1/journal/mind-maps
+
+Request:
+```json
+{
+  "limit": 10,
+  "offset": 0
+}
+```
+
+Response:
+```json
+{
+  "mind_maps": [
+    {
+      "id": "f0e1d2c3-b4a5-6b7c-8d9e-0f1e2d3c4b5a",
+      "title": "My Personal Ethics Map",
+      "updated_at": "2025-06-04T16:15:00Z",
+      "node_count": 15
+    },
+    // More maps...
+  ],
+  "total_count": 3, // Limited by Tier 1 if applicable
+  "next_offset": null
+}
+```
+
+### GET /api/v1/journal/mind-maps/{map_id}
+
+Request: (No body)
+
+Response:
+```json
+{
+  "mind_map": {
+    "id": "f0e1d2c3-b4a5-6b7c-8d9e-0f1e2d3c4b5a",
+    "title": "My Personal Ethics Map",
+    "description": "Mapping my thoughts on moral responsibility.",
+    "map_data": { ... },
+    "created_at": "2025-06-04T16:10:00Z",
+    "updated_at": "2025-06-04T16:15:00Z",
+    "is_public": false,
+    "can_edit": true // Based on user permissions/tier
+  }
+}
+```
+
+### PUT /api/v1/journal/mind-maps/{map_id}
+
+Request: (Similar to POST /mind-maps, with updated fields)
+
+Response: (Similar to GET /mind-maps/{map_id})
+*(Note: Tier 1 users may have limitations on updates, e.g., cannot add more nodes beyond limit)*
+
+### POST /api/v1/journal/mind-maps/{map_id}/share
+
+Request:
+```json
+{
+  "is_public": true
+}
+```
+
+Response:
+```json
+{
+  "map_id": "f0e1d2c3-b4a5-6b7c-8d9e-0f1e2d3c4b5a",
+  "is_public": true,
+  "share_token": "aBcDeFgHiJkLmNoPqRsTuVwXyZ1234567890aBcDeFgHiJkLmNoPqRsTuVwXyZ"
+}
+```
+*(Note: Sharing might be a Tier 2 feature)*
+
+## User Experience Flow
+
+### Stage 1: Capturing Insights (1-5 minutes)
+User encounters a meaningful insight in Ask AI. Taps "Save to Journal." A modal appears with the AI response quoted. User selects an AI-suggested reflection prompt ("How does this challenge your previous beliefs?") and types a brief reflection. System auto-tags with concepts like "Free Will" and "Determinism." User saves, and the modal closes, returning them to the AI chat. XP awarded for saving and reflecting.
+
+### Stage 2: Creating Multimedia Memories (5-15 minutes)
+User opens the Journal and taps "Create Entry." Selects "Photo" and uploads a picture of a meaningful place. AI suggests concepts like "Nature" and "Solitude." User writes a reflection, links the suggested concepts, and adds a "Peaceful" mood tag. Saves the entry, triggering "Memory Crystallized" animation. XP awarded for multimedia entry.
+
+### Stage 3: Weaving Philosophical Threads (10-20 minutes)
+While writing a new entry about a recent Quest completion, the system highlights related past entries tagged with the same "Stoicism" concept. User taps a highlighted entry, creating a visual thread connection. System notifies "Philosophical Thread Detected!" User explores the thread view, seeing how their understanding of Stoicism has evolved across different app experiences. XP awarded for connecting entries.
+
+### Stage 4: Building a Personal Cosmos Map (Premium Feature) (15-45 minutes)
+User (Tier 1 or 2) taps "Create Cosmos Map." Starts with a blank canvas. Adds a personal node "My Anxiety Trigger." Links it to the formal concept "Existential Angst." Adds another node "Grandma's Advice" and links it to "Practical Wisdom." Embeds a relevant journal entry into the "Anxiety Trigger" node. Tier 1 user hits the 20-node limit and sees an upgrade prompt. Tier 2 user continues adding nodes, customizing colors, and setting connection types. Saves the map. XP awarded for map creation.
+
+### Stage 5: Navigating the Journal (Ongoing)
+User explores their journal using different views: viewing the constellation map to see concept clusters, scrolling the timeline river for chronological flow, or filtering by the "Ethics" concept to review all related entries. User uses the Media Gallery to find a specific photo entry. User accesses "My Cosmos Maps" to review and edit their personal mind flow maps.
+
+## Gamification & XP Integration
+
+| Action | XP Reward | Conditions |
+|--------|-----------|------------|
+| Create Text Entry | +5 XP | Basic text entry creation |
+| Create Multimedia Entry | +10 XP | Entry includes photo, video, audio, or doc |
+| Add Reflection to Saved Content | +5 XP | Adding personal thoughts to content saved from other components |
+| Link Concept to Entry | +2 XP | Per concept linked |
+| Connect Two Entries (Thread) | +8 XP | Creating a philosophical thread connection |
+| Create Mind Flow Map (Premium) | +25 XP | First creation of a map |
+| Add Node to Mind Map (Premium) | +1 XP | Per node added (up to tier limit) |
+| Share Mind Flow Map (Tier 2) | +15 XP | Making a map public |
+| Reflection Streak (Daily) | +10 XP | Journaling for 3 consecutive days |
+| Memory Weaver (Weekly) | +20 XP | Creating 3+ multimedia entries in a week |
+
+### Badges
+- **Novice Scribe**: Create 10 journal entries
+- **Multimedia Chronicler**: Create 5 multimedia entries
+- **Concept Connector**: Link 50 concepts across entries
+- **Thread Weaver**: Create 10 philosophical threads
+- **Cosmos Architect (Premium)**: Create 3 Mind Flow Maps
+
+## Advanced Workflows / Contextual Prompting
+
+### AI-Powered Reflection Prompts
+- System analyzes entry content, linked concepts, and user history
+- Generates 2-3 highly relevant prompts (e.g., "How does this [Concept] apply to your recent [Quest]?", "Contrast this feeling with your entry on [Date] about [Related Concept].")
+
+### Philosophical Thread Detection
+- Backend task analyzes entry connections and concept tags
+- Identifies recurring themes or evolving understanding
+- Notifies user: "We've detected a growing thread around [Concept]. Would you like to explore it?"
+
+### Concept Discovery via Journaling
+- NLP analysis of user's free-form text
+- Suggests potential new concept links: "Your writing seems related to [New Concept]. Link it?"
+
+### Cross-Component Contextualization
+- When saving from Ask AI, prompt might be: "How does this AI insight relate to your recent Explore discovery of [Concept]?"
+- When saving from Quest, prompt might be: "Reflect on how overcoming this challenge strengthened your understanding of [Quest Concept]."
+
+## Implementation Considerations
+
+### Multimedia Storage & Performance
+- Utilize AWS S3 for scalable media storage.
+- Implement robust image/video compression.
+- Use CDN (CloudFront) for fast media delivery.
+- Consider background uploads for large files.
+
+### Concept Tagging Accuracy
+- Fine-tune NLP models for philosophical concept detection.
+- Allow user correction of auto-suggested tags.
+- Balance precision and recall for suggestions.
+
+### Data Privacy
+- Ensure all user-generated content is encrypted at rest and in transit.
+- Clearly define privacy settings for shared Mind Flow Maps.
+- Anonymize any data used for system-wide analytics or prompt generation.
+
+### Premium Feature Implementation
+- Integrate securely with payment/subscription backend.
+- Implement robust feature flagging based on user tier.
+- Provide clear upgrade paths and messaging within the UI.
+- Ensure graceful degradation for users who downgrade tiers.
+
+### Offline Support
+- Allow creation of text-only entries offline.
+- Queue media uploads and concept syncing for when connection resumes.
+- Store recent entries locally for offline viewing.
+
+## Implementation Phases
+
+### Phase 1: Core Journaling (Weeks 1-4)
+- Implement basic text entry creation, editing, viewing (Timeline view).
+- Set up core database models (`journal_entries`).
+- Implement basic concept linking (`journal_entry_concepts`).
+- Build core API endpoints for CRUD operations.
+
+### Phase 2: Cross-Component & Multimedia (Weeks 5-8)
+- Implement "Save to Journal" from Ask AI and Explore.
+- Add multimedia support (photo, video upload/viewing).
+- Implement `journal_entry_media` and `journal_cross_component_links` tables.
+- Develop Media Gallery view.
+
+### Phase 3: Visualizations & Threads (Weeks 9-12)
+- Implement Constellation Map and Concept Orbits views.
+- Develop Philosophical Thread detection and visualization.
+- Add `journal_entry_connections` table.
+- Integrate remaining cross-component saves (Quest, Forum).
+
+### Phase 4: Mind Flow Maps & Premium Tiers (Weeks 13-16)
+- Build Personal Mind Flow Map Creator (`CosmosBuilder`).
+- Implement `mind_flow_maps` table and related APIs.
+- Integrate subscription checks and tiered feature access.
+- Add sharing functionality (Tier 2).
+- Refine gamification and advanced prompts.

@@ -1,0 +1,217 @@
+# Master Blueprint Integration Index for Refined Journal Feature
+
+## Overview
+
+This document provides detailed instructions for integrating the refined Journal Feature into the Setarcos App Master Technical Blueprint. The integration ensures proper indexing, cross-referencing, and consistency with existing documentation.
+
+## 1. Integration Location
+
+### Primary Section
+- **Section Number**: 5.4
+- **Section Title**: Journal Feature
+- **Current Location**: Line 1834 in the master blueprint
+- **Action Required**: Complete replacement of existing section content
+
+### Table of Contents Update
+- **Location**: Around line 56
+- **Current Entry**: `* [5.4 Journal Feature](#54-journal-feature)`
+- **Action Required**: Update with any new subsections if not already present
+
+## 2. Cross-Reference Updates
+
+### Update References to Concepts System
+- **Location**: Section 5.4 (Journal Feature)
+- **Action Required**: Add cross-references to Section 5.9 (Concepts System)
+- **Example Format**: `(see Section 5.9 for detailed Concepts System implementation)`
+
+### Update References from Other Features
+- **Sections to Update**:
+  - Section 5.1 (Ask Feature): Add reference to Journal integration for saving AI insights
+  - Section 5.2 (Quest Feature): Update Quest-Journal integration references for reflection prompts
+  - Section 5.3 (Explore Feature): Add reference to Journal integration for "Eureka" entries
+  - Section 5.5 (Forum Feature): Add reference to Journal integration for private reflections
+  - Section 5.9 (Concepts System): Ensure bidirectional references for concept tagging
+
+## 3. Database Schema Updates
+
+### Add New Tables to Section 7.2 (Table Definitions)
+- **Location**: Section 7.2
+- **Action Required**: Add the following table references:
+  ```
+  - `journal_entries`: Core journal entry content (defined in Section 5.4)
+  - `journal_entry_media`: Multimedia attachments for entries (defined in Section 5.4)
+  - `journal_entry_concepts`: Concept tagging for entries (defined in Section 5.4)
+  - `journal_entry_connections`: Philosophical thread connections (defined in Section 5.4)
+  - `journal_cross_component_links`: Links to content from other components (defined in Section 5.4)
+  - `mind_flow_maps`: User-created concept maps (premium feature) (defined in Section 5.4)
+  ```
+
+### Update ERD in Section 7.1
+- **Location**: Section 7.1
+- **Action Required**: Ensure the Entity-Relationship Diagram includes the new tables and their relationships
+
+## 4. API Endpoint Updates
+
+### Add New Endpoints to Section 8.3 (Endpoint Specifications)
+- **Location**: Section 8.3
+- **Action Required**: Add the following endpoint references:
+  ```
+  - POST /api/v1/journal/entries (defined in Section 5.4)
+  - GET /api/v1/journal/entries (defined in Section 5.4)
+  - GET /api/v1/journal/entries/{entry_id} (defined in Section 5.4)
+  - PUT /api/v1/journal/entries/{entry_id} (defined in Section 5.4)
+  - DELETE /api/v1/journal/entries/{entry_id} (defined in Section 5.4)
+  - POST /api/v1/journal/mind-maps (defined in Section 5.4)
+  - GET /api/v1/journal/mind-maps (defined in Section 5.4)
+  - GET /api/v1/journal/mind-maps/{map_id} (defined in Section 5.4)
+  - PUT /api/v1/journal/mind-maps/{map_id} (defined in Section 5.4)
+  - POST /api/v1/journal/mind-maps/{map_id}/share (defined in Section 5.4)
+  ```
+
+## 5. XP System Integration
+
+### Update Section 6.2 (XP Calculation Logic)
+- **Location**: Section 6.2
+- **Action Required**: Add the following XP actions:
+  ```
+  | Feature | Action | XP Reward | Conditions |
+  |---------|--------|-----------|------------|
+  | Journal | Create Text Entry | +5 XP | Basic text entry creation |
+  | Journal | Create Multimedia Entry | +10 XP | Entry includes photo, video, audio, or doc |
+  | Journal | Add Reflection to Saved Content | +5 XP | Adding personal thoughts to content saved from other components |
+  | Journal | Link Concept to Entry | +2 XP | Per concept linked |
+  | Journal | Connect Two Entries (Thread) | +8 XP | Creating a philosophical thread connection |
+  | Journal | Create Mind Flow Map (Premium) | +25 XP | First creation of a map |
+  | Journal | Add Node to Mind Map (Premium) | +1 XP | Per node added (up to tier limit) |
+  | Journal | Share Mind Flow Map (Tier 2) | +15 XP | Making a map public |
+  | Journal | Reflection Streak (Daily) | +10 XP | Journaling for 3 consecutive days |
+  | Journal | Memory Weaver (Weekly) | +20 XP | Creating 3+ multimedia entries in a week |
+  ```
+
+## 6. Subscription Tier Integration
+
+### Update Section 6.4 (Subscription Tiers)
+- **Location**: Section 6.4
+- **Action Required**: Add the following premium feature definitions:
+  ```
+  Journal Feature - Mind Flow Maps:
+  
+  Free Tier:
+  - View-only access to shared maps
+  - No map creation capabilities
+  
+  Tier 1 (Basic Cosmos):
+  - Node Creation (Max 20 nodes)
+  - Basic Shapes (3 node types)
+  - Simple Connections (single type)
+  - Preset Colors (10 options)
+  - 3 Maps Maximum
+  - Image Export Only
+  
+  Tier 2 (Full Cosmos):
+  - Unlimited Nodes
+  - Custom Shapes & Icons
+  - Advanced Connections (5 types)
+  - Full Color Picker
+  - Unlimited Maps
+  - Collaboration Mode
+  - Animation Controls
+  - PDF/Video Export
+  - API Access
+  ```
+
+## 7. Asynchronous Processing Updates
+
+### Update Section 10.3 (Task Definitions)
+- **Location**: Section 10.3
+- **Action Required**: Add the following Celery tasks:
+  ```python
+  @celery_app.task
+  def detect_philosophical_threads(user_id):
+      """
+      Analyzes user's journal entries to detect recurring themes or evolving understanding.
+      Called daily or when user creates a new entry.
+      """
+      pass
+
+  @celery_app.task
+  def generate_reflection_prompts(entry_id):
+      """
+      Generates personalized reflection prompts based on entry content and user history.
+      Called when a new entry is created or viewed.
+      """
+      pass
+
+  @celery_app.task
+  def process_media_uploads(entry_id, media_ids):
+      """
+      Processes uploaded media files (compression, thumbnail generation, etc.).
+      Called when media is uploaded to a journal entry.
+      """
+      pass
+
+  @celery_app.task
+  def sync_concept_tags_across_features(user_id, concept_id):
+      """
+      Ensures consistent concept tagging across Journal and other features.
+      Called when concept relationships change.
+      """
+      pass
+  ```
+
+## 8. Frontend Component Updates
+
+### Update Section 3.2.1 (Frontend Components)
+- **Location**: Section 3.2.1
+- **Action Required**: Add the following component references:
+  ```
+  - JournalHomeScreen: Main view with multiple visualization options
+  - JournalEntryEditor: Component for creating and editing entries
+  - MediaUploader: Handles multimedia file uploads
+  - CosmosBuilder: Premium feature for creating Mind Flow Maps
+  ```
+
+## 9. Analytics Implementation Updates
+
+### Update Section 11.2 (Key Metrics and Events)
+- **Location**: Section 11.2
+- **Action Required**: Add the following analytics events:
+  ```
+  | Category | Event | Properties |
+  |----------|-------|------------|
+  | Journal | entry_created | entry_id, entry_type, media_count, concept_count, source_component |
+  | Journal | entry_viewed | entry_id, view_duration |
+  | Journal | thread_created | source_entry_id, target_entry_id |
+  | Journal | mind_map_created | map_id, node_count, subscription_tier |
+  | Journal | mind_map_shared | map_id, is_public |
+  | Journal | reflection_streak | streak_count, streak_days |
+  ```
+
+## 10. Potential Conflicts and Considerations
+
+### Concepts System Coordination
+- **Issue**: The Journal feature relies heavily on the Concepts System for tagging and organization
+- **Resolution**: Ensure both sections are updated simultaneously and cross-referenced properly
+- **Action Required**: Coordinate with Concepts System implementation team
+
+### Media Storage Integration
+- **Issue**: Journal feature requires significant media storage capabilities
+- **Resolution**: Ensure AWS S3 integration is properly documented
+- **Action Required**: Update Section 12 (Infrastructure) if needed to reflect media storage requirements
+
+### Premium Feature Access Control
+- **Issue**: Mind Flow Maps feature requires subscription tier checks
+- **Resolution**: Ensure consistent implementation of feature access control
+- **Action Required**: Coordinate with subscription management system implementation
+
+### Cross-Component Data Flow
+- **Issue**: Journal integrates with all other app components
+- **Resolution**: Ensure consistent data structures and context preservation
+- **Action Required**: Review all cross-component integration points for consistency
+
+## 11. Implementation Timeline Alignment
+
+- **Phase 1** (Core Journaling): Aligns with Sprint 3-6 in master blueprint timeline
+- **Phase 2** (Cross-Component & Multimedia): Aligns with Sprint 7-10 in master blueprint timeline
+- **Phase 3** (Visualizations & Threads): Aligns with Sprint 11-14 in master blueprint timeline
+- **Phase 4** (Mind Flow Maps & Premium Tiers): Aligns with Sprint 15-18 in master blueprint timeline

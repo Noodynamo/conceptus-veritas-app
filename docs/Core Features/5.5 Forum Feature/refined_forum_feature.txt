@@ -1,0 +1,626 @@
+5.5 Forum Feature
+
+Feature Goal: Create a concept-driven discussion platform that emphasizes collaborative inquiry while revealing hidden philosophical connections through an interactive cosmic constellation metaphor that integrates with other app features.
+
+## System Architecture
+
+### Frontend Components
+
+- `ForumScreen.tsx`: Primary cosmic forum interface with concept visualization layer and discussion discovery tools.
+- `CosmicConceptVisualization.tsx`: Interactive visualization component displaying concepts as celestial bodies with connection lines.
+- `ThreadListView.tsx`: Component for displaying concept-organized thread lists with bridge discussion highlighting.
+- `ThreadDetailScreen.tsx`: Discussion hub with mini constellation sidebar and concept-aware threading.
+- `MiniConstellationSidebar.tsx`: Compact cosmic visualization showing current thread's concept context and related discussions.
+- `ConceptConnectionBuilder.tsx`: Interface for creating and validating links between philosophical concepts.
+- `UnderstandingReactions.tsx`: Nuanced reaction system replacing traditional upvotes with philosophical engagement metrics.
+- `JournalIntegrationControls.tsx`: Controls for saving threads, insights, and constellation states to Journal.
+- `CrossFeatureNavigation.tsx`: Component facilitating seamless transitions between Forum and other app features.
+- `ConceptFilterControls.tsx`: Filters for concept types, discussion maturity, and personal interests.
+- `CosmicChronologicalToggle.tsx`: Switch between concept-organized and chronological thread views.
+- `ThreadComposer.tsx`: Rich text editor with concept tagging and constellation preview.
+
+### Backend Components
+
+- `forum_service.py`: Core service managing forum threads, comments, and concept relationships.
+- `concept_connection_service.py`: Handles creation, validation, and visualization of concept connections.
+- `cosmic_visualization_engine.py`: Generates and updates the cosmic representation of concept relationships.
+- `thread_discovery_service.py`: Powers the concept-driven thread discovery and recommendation system.
+- `understanding_metrics_service.py`: Processes and analyzes nuanced understanding reactions.
+- `community_validation_service.py`: Manages voting and quality scoring for proposed concept connections.
+- `cross_feature_integration_service.py`: Coordinates data flow between Forum and other app features.
+- `journal_sync_service.py`: Handles saving forum content to user's Journal with proper context preservation.
+- `serendipity_service.py`: AI-powered system for surfacing related discussions based on philosophical themes.
+- `question_evolution_tracker.py`: Analyzes how discussions transform and deepen over time.
+
+### Database Models
+
+```sql
+CREATE TABLE forum_threads (
+  id UUID PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id),
+  title VARCHAR(255) NOT NULL,
+  content TEXT NOT NULL,
+  is_bridge_discussion BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  last_activity_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  view_count INTEGER DEFAULT 0,
+  comment_count INTEGER DEFAULT 0
+);
+```
+Stores the main content and metadata for forum discussion threads.
+
+```sql
+CREATE TABLE forum_comments (
+  id UUID PRIMARY KEY,
+  thread_id UUID NOT NULL REFERENCES forum_threads(id),
+  user_id UUID NOT NULL REFERENCES users(id),
+  parent_comment_id UUID REFERENCES forum_comments(id),
+  content TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+```
+Stores threaded comments within forum discussions.
+
+```sql
+CREATE TABLE forum_thread_concepts (
+  id UUID PRIMARY KEY,
+  thread_id UUID NOT NULL REFERENCES forum_threads(id),
+  concept_id UUID NOT NULL REFERENCES concepts(id),
+  relevance_score FLOAT DEFAULT 1.0,
+  is_primary BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(thread_id, concept_id)
+);
+```
+Maps forum threads to concepts from the central Concepts system.
+
+```sql
+CREATE TABLE forum_comment_concepts (
+  id UUID PRIMARY KEY,
+  comment_id UUID NOT NULL REFERENCES forum_comments(id),
+  concept_id UUID NOT NULL REFERENCES concepts(id),
+  relevance_score FLOAT DEFAULT 1.0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(comment_id, concept_id)
+);
+```
+Maps individual comments to concepts for fine-grained concept tracking.
+
+```sql
+CREATE TABLE concept_connections (
+  id UUID PRIMARY KEY,
+  source_concept_id UUID NOT NULL REFERENCES concepts(id),
+  target_concept_id UUID NOT NULL REFERENCES concepts(id),
+  connection_type VARCHAR(50) NOT NULL, -- 'builds_on', 'challenges', 'exemplifies', 'contrasts_with'
+  strength FLOAT DEFAULT 0.5,
+  created_by_user_id UUID NOT NULL REFERENCES users(id),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(source_concept_id, target_concept_id, connection_type)
+);
+```
+Stores community-built connections between philosophical concepts.
+
+```sql
+CREATE TABLE concept_connection_validations (
+  id UUID PRIMARY KEY,
+  connection_id UUID NOT NULL REFERENCES concept_connections(id),
+  user_id UUID NOT NULL REFERENCES users(id),
+  is_valid BOOLEAN NOT NULL,
+  user_mastery_level INTEGER, -- User's mastery level for the concepts at time of validation
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(connection_id, user_id)
+);
+```
+Tracks community validation of proposed concept connections.
+
+```sql
+CREATE TABLE understanding_reactions (
+  id UUID PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id),
+  comment_id UUID NOT NULL REFERENCES forum_comments(id),
+  reaction_type VARCHAR(50) NOT NULL, -- 'clarified', 'challenged', 'connected'
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(user_id, comment_id, reaction_type)
+);
+```
+Stores nuanced understanding reactions to replace traditional upvotes.
+
+```sql
+CREATE TABLE forum_journal_links (
+  id UUID PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id),
+  thread_id UUID REFERENCES forum_threads(id),
+  comment_id UUID REFERENCES forum_comments(id),
+  journal_entry_id UUID NOT NULL REFERENCES journal_entries(id),
+  link_type VARCHAR(50) NOT NULL, -- 'thread_save', 'insight_moment', 'connection_discovery', 'constellation_state'
+  constellation_data JSONB, -- Stores constellation state if applicable
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+```
+Links forum content to journal entries for cross-feature integration.
+
+## API Endpoints
+
+### GET /api/v1/forum/cosmic-view
+
+Request:
+```json
+{
+  "concept_filter": ["a2f8d724-61c4-4d3f-9ba4-a7c91838230f"], // Optional
+  "view_mode": "cosmic", // "cosmic" or "chronological"
+  "activity_threshold": "high", // Optional: "low", "medium", "high"
+  "personal_focus": true // Optional: focus on user's interests
+}
+```
+
+Response:
+```json
+{
+  "concept_clusters": [
+    {
+      "concept_id": "a2f8d724-61c4-4d3f-9ba4-a7c91838230f",
+      "concept_name": "Ethics",
+      "color": "#FF7700", // Matches Explore feature color
+      "thread_count": 24,
+      "activity_level": "high",
+      "related_concepts": [
+        {
+          "concept_id": "b3e9f835-72d5-5e4g-0cb5-d8e24c9f163g",
+          "concept_name": "Virtue Ethics",
+          "connection_strength": 0.8,
+          "connection_type": "builds_on"
+        }
+      ],
+      "bridge_discussions": [
+        {
+          "thread_id": "c4d9e046-83e6-6f5g-1dc6-c9e13b0g054h",
+          "title": "How does virtue ethics relate to existentialism?",
+          "comment_count": 15,
+          "last_activity_at": "2025-06-04T12:30:00Z"
+        }
+      ]
+    }
+    // More concept clusters...
+  ],
+  "shooting_stars": [
+    {
+      "thread_id": "d5e0f157-94f7-7g6h-2ed7-d0f14c1h165i",
+      "concept_id": "e6f1g268-05g8-8h7i-3fe8-e1g25d2i276j",
+      "activity_type": "new_comment",
+      "timestamp": "2025-06-04T21:45:00Z"
+    }
+  ]
+}
+```
+
+### GET /api/v1/forum/threads
+
+Request:
+```json
+{
+  "concept_id": "a2f8d724-61c4-4d3f-9ba4-a7c91838230f", // Optional
+  "sort_by": "activity", // "activity", "created", "comments"
+  "limit": 20,
+  "offset": 0
+}
+```
+
+Response:
+```json
+{
+  "threads": [
+    {
+      "id": "c4d9e046-83e6-6f5g-1dc6-c9e13b0g054h",
+      "title": "How does virtue ethics relate to existentialism?",
+      "excerpt": "I've been studying both systems and wonder about their compatibility...",
+      "user": {
+        "id": "f7g2h379-16h9-9i8j-4gf9-f2h36e3j387k",
+        "username": "PhilosophyExplorer",
+        "avatar_url": "https://..."
+      },
+      "is_bridge_discussion": true,
+      "concepts": [
+        {
+          "id": "a2f8d724-61c4-4d3f-9ba4-a7c91838230f",
+          "name": "Ethics",
+          "color": "#FF7700"
+        },
+        {
+          "id": "g8h3i480-27i0-0j9k-5hg0-g3i47f4k498l",
+          "name": "Existentialism",
+          "color": "#3399FF"
+        }
+      ],
+      "comment_count": 15,
+      "created_at": "2025-06-03T15:00:00Z",
+      "last_activity_at": "2025-06-04T12:30:00Z"
+    }
+    // More threads...
+  ],
+  "total_count": 24,
+  "next_offset": 20
+}
+```
+
+### GET /api/v1/forum/threads/{thread_id}
+
+Request: (No body)
+
+Response:
+```json
+{
+  "thread": {
+    "id": "c4d9e046-83e6-6f5g-1dc6-c9e13b0g054h",
+    "title": "How does virtue ethics relate to existentialism?",
+    "content": "I've been studying both systems and wonder about their compatibility...",
+    "user": {
+      "id": "f7g2h379-16h9-9i8j-4gf9-f2h36e3j387k",
+      "username": "PhilosophyExplorer",
+      "avatar_url": "https://..."
+    },
+    "is_bridge_discussion": true,
+    "concepts": [
+      {
+        "id": "a2f8d724-61c4-4d3f-9ba4-a7c91838230f",
+        "name": "Ethics",
+        "color": "#FF7700"
+      },
+      {
+        "id": "g8h3i480-27i0-0j9k-5hg0-g3i47f4k498l",
+        "name": "Existentialism",
+        "color": "#3399FF"
+      }
+    ],
+    "created_at": "2025-06-03T15:00:00Z",
+    "updated_at": "2025-06-03T15:00:00Z",
+    "comments": [
+      {
+        "id": "h9i4j591-38j1-1k0l-6ih1-h4j58g5l509m",
+        "content": "Virtue ethics focuses on character development while existentialism emphasizes individual freedom...",
+        "user": {
+          "id": "i0j5k602-49k2-2l1m-7ji2-i5k69h6m610n",
+          "username": "EthicsScholar",
+          "avatar_url": "https://..."
+        },
+        "parent_comment_id": null,
+        "concepts": [
+          {
+            "id": "a2f8d724-61c4-4d3f-9ba4-a7c91838230f",
+            "name": "Ethics"
+          }
+        ],
+        "understanding_reactions": {
+          "clarified": 5,
+          "challenged": 2,
+          "connected": 8
+        },
+        "created_at": "2025-06-03T15:30:00Z"
+      }
+      // More comments...
+    ],
+    "constellation_context": {
+      "central_concepts": [
+        {
+          "id": "a2f8d724-61c4-4d3f-9ba4-a7c91838230f",
+          "name": "Ethics",
+          "color": "#FF7700"
+        },
+        {
+          "id": "g8h3i480-27i0-0j9k-5hg0-g3i47f4k498l",
+          "name": "Existentialism",
+          "color": "#3399FF"
+        }
+      ],
+      "orbital_concepts": [
+        {
+          "id": "b3e9f835-72d5-5e4g-0cb5-d8e24c9f163g",
+          "name": "Virtue Ethics",
+          "color": "#FF9933",
+          "connection_strength": 0.8,
+          "connection_type": "builds_on",
+          "related_thread_count": 3
+        }
+        // More orbital concepts...
+      ]
+    }
+  }
+}
+```
+
+### POST /api/v1/forum/threads
+
+Request:
+```json
+{
+  "title": "The role of authenticity in ethical decision-making",
+  "content": "I'm curious how the existentialist concept of authenticity might inform ethical choices...",
+  "concept_ids": ["a2f8d724-61c4-4d3f-9ba4-a7c91838230f", "g8h3i480-27i0-0j9k-5hg0-g3i47f4k498l"]
+}
+```
+
+Response:
+```json
+{
+  "thread_id": "j1k6l713-50l3-3m2n-8kj3-j6l70i7n721o",
+  "title": "The role of authenticity in ethical decision-making",
+  "created_at": "2025-06-04T21:55:00Z",
+  "is_bridge_discussion": true,
+  "concepts": [
+    {
+      "id": "a2f8d724-61c4-4d3f-9ba4-a7c91838230f",
+      "name": "Ethics"
+    },
+    {
+      "id": "g8h3i480-27i0-0j9k-5hg0-g3i47f4k498l",
+      "name": "Existentialism"
+    }
+  ],
+  "xp_earned": 15
+}
+```
+
+### POST /api/v1/forum/threads/{thread_id}/comments
+
+Request:
+```json
+{
+  "content": "Authenticity in existentialism requires acknowledging our freedom and responsibility...",
+  "parent_comment_id": null, // Optional, for threaded replies
+  "concept_ids": ["g8h3i480-27i0-0j9k-5hg0-g3i47f4k498l"] // Optional
+}
+```
+
+Response:
+```json
+{
+  "comment_id": "k2l7m824-61m4-4n3o-9lk4-k7m81j8o832p",
+  "thread_id": "j1k6l713-50l3-3m2n-8kj3-j6l70i7n721o",
+  "created_at": "2025-06-04T22:00:00Z",
+  "concepts": [
+    {
+      "id": "g8h3i480-27i0-0j9k-5hg0-g3i47f4k498l",
+      "name": "Existentialism"
+    }
+  ],
+  "constellation_update": {
+    "pulsing_concepts": ["g8h3i480-27i0-0j9k-5hg0-g3i47f4k498l"],
+    "new_connections": []
+  },
+  "xp_earned": 5
+}
+```
+
+### POST /api/v1/forum/concept-connections
+
+Request:
+```json
+{
+  "source_concept_id": "a2f8d724-61c4-4d3f-9ba4-a7c91838230f",
+  "target_concept_id": "g8h3i480-27i0-0j9k-5hg0-g3i47f4k498l",
+  "connection_type": "builds_on",
+  "strength": 0.7,
+  "context_thread_id": "j1k6l713-50l3-3m2n-8kj3-j6l70i7n721o" // Optional
+}
+```
+
+Response:
+```json
+{
+  "connection_id": "l3m8n935-72n5-5o4p-0ml5-l8n92k9p943q",
+  "source_concept": {
+    "id": "a2f8d724-61c4-4d3f-9ba4-a7c91838230f",
+    "name": "Ethics"
+  },
+  "target_concept": {
+    "id": "g8h3i480-27i0-0j9k-5hg0-g3i47f4k498l",
+    "name": "Existentialism"
+  },
+  "connection_type": "builds_on",
+  "strength": 0.7,
+  "status": "pending_validation",
+  "validations_needed": 3,
+  "xp_earned": 10
+}
+```
+
+### POST /api/v1/forum/concept-connections/{connection_id}/validate
+
+Request:
+```json
+{
+  "is_valid": true
+}
+```
+
+Response:
+```json
+{
+  "connection_id": "l3m8n935-72n5-5o4p-0ml5-l8n92k9p943q",
+  "validation_count": 2,
+  "validations_needed": 1,
+  "status": "pending_validation",
+  "xp_earned": 3
+}
+```
+
+### POST /api/v1/forum/comments/{comment_id}/understanding-reactions
+
+Request:
+```json
+{
+  "reaction_type": "clarified" // "clarified", "challenged", or "connected"
+}
+```
+
+Response:
+```json
+{
+  "comment_id": "k2l7m824-61m4-4n3o-9lk4-k7m81j8o832p",
+  "reaction_type": "clarified",
+  "reaction_counts": {
+    "clarified": 6,
+    "challenged": 2,
+    "connected": 8
+  },
+  "xp_earned": 1
+}
+```
+
+### POST /api/v1/forum/journal-integration
+
+Request:
+```json
+{
+  "link_type": "thread_save", // "thread_save", "insight_moment", "connection_discovery", "constellation_state"
+  "thread_id": "j1k6l713-50l3-3m2n-8kj3-j6l70i7n721o", // Optional
+  "comment_id": "k2l7m824-61m4-4n3o-9lk4-k7m81j8o832p", // Optional
+  "reflection": "This discussion helped me understand how authenticity relates to ethical choices...",
+  "constellation_data": { ... } // Optional, for constellation_state type
+}
+```
+
+Response:
+```json
+{
+  "journal_entry_id": "m4n9o046-83o6-6p5q-1nm6-m9n03l0q054r",
+  "link_type": "thread_save",
+  "created_at": "2025-06-04T22:05:00Z",
+  "concepts_linked": [
+    {
+      "id": "a2f8d724-61c4-4d3f-9ba4-a7c91838230f",
+      "name": "Ethics"
+    },
+    {
+      "id": "g8h3i480-27i0-0j9k-5hg0-g3i47f4k498l",
+      "name": "Existentialism"
+    }
+  ],
+  "xp_earned": 8
+}
+```
+
+## User Experience Flow
+
+### Stage 1: Cosmic Discovery (1-3 minutes)
+User opens the Forum and sees the cosmic concept visualization. Concepts appear as color-coded celestial bodies with connection lines showing relationships. The user notices a bright cluster around "Ethics" indicating high activity. They tap the Ethics concept, and the view zooms in to show threads organized by concept relevance. Bridge discussions (spanning multiple concepts) are highlighted with special styling. The user selects a bridge discussion connecting Ethics and Existentialism.
+
+### Stage 2: Thread Engagement (5-15 minutes)
+The ThreadDetail screen opens with the discussion content and a mini constellation sidebar showing the thread's concept context. As the user reads comments, related concept "stars" pulse in the constellation when referenced. The user notices a comment with many "This connected ideas for me" reactions. They tap the Understanding Reaction button to add their own "This clarified my thinking" reaction. The system awards XP for the engagement. The user composes a reply, and as they type, the constellation preview shows potential new connections based on concepts mentioned.
+
+### Stage 3: Concept Connection Building (2-5 minutes)
+While reading the discussion, the user notices a philosophical connection between "Virtue Ethics" and "Authenticity" that hasn't been formally linked. They tap the "Add Concept Connection" button, search for both concepts, and select "builds on" as the connection type. The system shows a preview of how this connection would appear in the concept constellation. The user submits the connection proposal, and it enters the community validation queue. The system prompts the user to document their reasoning in their Journal, which they do, earning additional XP.
+
+### Stage 4: Cross-Feature Navigation (3-8 minutes)
+From the thread detail view, the user notices a "shooting star" notification indicating new activity in a related concept area. They tap the notification in the constellation sidebar, smoothly transitioning to another discussion about Existentialism. After reading for a while, they use the "Save Thread to Journal" option to preserve the discussion with its concept context. The user then taps "Explore This Concept" to transition to the Explore feature, where they can see how Existentialism fits into the broader philosophical landscape. Their forum participation has illuminated this concept in their personal Explore constellation.
+
+### Stage 5: Serendipitous Discovery (2-5 minutes)
+Returning to the Forum, the user toggles to their Personal Constellation Focus, which highlights concept areas matching their interests and participation history. They notice an unexpected connection between a concept they've been exploring and one they hadn't considered before. The system has identified this as a potential area of interest based on their discussion patterns. The user taps "Capture Constellation State" to save this moment of discovery to their Journal for later reflection, completing a seamless cross-feature experience.
+
+## Gamification & XP Integration
+
+| Action | XP Reward | Conditions |
+|--------|-----------|------------|
+| Create Thread | +15 XP | New discussion thread creation |
+| Bridge Discussion | +5 XP | Bonus for threads spanning multiple concepts |
+| Post Comment | +5 XP | Adding to an existing discussion |
+| Receive Understanding Reaction | +2 XP | Per reaction received on a comment |
+| Give Understanding Reaction | +1 XP | Per reaction given to others' comments |
+| Propose Concept Connection | +10 XP | Suggesting a new concept relationship |
+| Validate Connection | +3 XP | Participating in connection validation |
+| Connection Approved | +15 XP | When your proposed connection is validated |
+| Save to Journal | +8 XP | Preserving forum content in personal journal |
+| Cross-Feature Navigation | +3 XP | Transitioning between Forum and other features |
+
+### Badges
+- **Discussion Starter**: Create 5 threads
+- **Bridge Builder**: Create 3 bridge discussions spanning multiple concepts
+- **Concept Connector**: Propose 10 concept connections that get validated
+- **Understanding Amplifier**: Receive 50 understanding reactions
+- **Cosmic Navigator**: Use cross-feature navigation 20 times
+- **Serendipity Seeker**: Discover and engage with 15 threads through constellation navigation
+
+## Advanced Workflows / Contextual Prompting
+
+### Serendipity Feed Generation
+- System analyzes user's concept interests and discussion patterns
+- Identifies philosophically related discussions beyond simple keyword matching
+- Presents unexpected but relevant threads through "shooting star" notifications
+- Contextual prompt: "This discussion on [Concept A] relates to your interest in [Concept B] through [philosophical connection]"
+
+### Question Evolution Tracking
+- NLP analysis tracks how initial questions transform through discussion
+- Identifies key turning points and insight moments
+- Visualizes the philosophical journey from question to deeper understanding
+- Contextual prompt: "This discussion has evolved from [initial question] to [deeper philosophical inquiry]. Capture this evolution?"
+
+### Cross-Thread Insight Synthesis
+- System detects when separate discussions are approaching similar philosophical territory
+- Suggests potential synthesis opportunities to users engaged in both threads
+- Facilitates creation of "insight posts" that bridge multiple discussions
+- Contextual prompt: "You've participated in multiple discussions about [Concept]. Would you like to synthesize these insights?"
+
+### Concept Mastery-Weighted Validation
+- Connection validation influence weighted by user's demonstrated concept mastery
+- Higher mastery in relevant concepts gives more weight to validation votes
+- Encourages expertise development while maintaining community participation
+- Contextual prompt: "Your mastery in [Concept] gives your validation additional weight in this connection proposal"
+
+## Implementation Considerations
+
+### Visualization Performance
+- Implement progressive rendering for complex concept constellations
+- Use WebGL for hardware-accelerated cosmic visualizations
+- Optimize for mobile devices with simplified view options
+- Consider fallback text-based navigation for low-end devices
+
+### Concept Connection Quality
+- Implement sophisticated validation algorithms to prevent concept graph pollution
+- Balance between encouraging connection creation and maintaining philosophical rigor
+- Use concept mastery levels to weight validation influence
+- Regularly prune low-quality or rarely-traversed connections
+
+### Cross-Feature Data Consistency
+- Ensure consistent concept representation across Forum, Explore, and Journal
+- Synchronize concept color coding and visualization metaphors
+- Maintain user's cosmic context when transitioning between features
+- Cache constellation state for smooth cross-feature navigation
+
+### Accessibility Considerations
+- Provide toggle between cosmic and traditional list views
+- Ensure all visualizations have text-based alternatives
+- Support keyboard navigation throughout the cosmic interface
+- Use patterns and textures in addition to colors for concept differentiation
+
+### Community Moderation
+- Implement understanding-focused reaction system to discourage contentious voting
+- Use concept mastery to weight moderation influence
+- Provide clear philosophical discussion guidelines
+- Encourage steel-manning and principle of charity in discussions
+
+## Implementation Phases
+
+### Phase 1: Core Forum Functionality (Weeks 1-4)
+- Implement basic thread and comment functionality
+- Set up database models and API endpoints
+- Create initial concept tagging system
+- Develop understanding reaction system to replace traditional voting
+
+### Phase 2: Cosmic Visualization (Weeks 5-8)
+- Build concept visualization layer
+- Implement mini constellation sidebar
+- Create concept-driven thread discovery
+- Develop bridge discussion highlighting
+
+### Phase 3: Community Connection Building (Weeks 9-12)
+- Implement concept connection proposal system
+- Create community validation workflow
+- Develop connection quality scoring
+- Build concept relationship visualization
+
+### Phase 4: Cross-Feature Integration (Weeks 13-16)
+- Integrate with Journal feature
+- Synchronize with Explore's cosmic metaphor
+- Implement cross-feature navigation
+- Create serendipity feed and question evolution tracking

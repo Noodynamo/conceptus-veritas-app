@@ -1,0 +1,91 @@
+# Areas Needing Clarification for Enhanced Journal Feature
+
+## 1. Constellation Mapping Implementation
+
+### Questions:
+- **Visualization Technology**: What specific visualization technology should be used for the constellation map? (WebGL, Canvas, SVG, or a specialized library)
+- **Node Representation**: How should different types of content be visually distinguished in the constellation? (Journal entries, saved AI responses, quest completions, etc.)
+- **Connection Types**: What specific connection types should be available between nodes? (e.g., "inspired by," "contradicts," "builds upon")
+- **Performance Thresholds**: What is the expected maximum number of nodes that should be efficiently displayed in the constellation view?
+- **Mobile vs. Desktop Experience**: Should the constellation experience be identical across devices or simplified for mobile?
+
+## 2. Quick Entry Feature Scope
+
+### Questions:
+- **Quick Entry Persistence**: Should the Quick Entry button be globally accessible throughout the app or only in specific sections?
+- **Media Limitations**: Are there size or duration limits for media captured in Quick Entry mode? (e.g., maximum video length)
+- **Default Privacy Settings**: What should be the default privacy setting for Quick Entries? (Private, same as last entry, or context-dependent)
+- **Geolocation Precision**: What level of geolocation precision is appropriate? (City-level, neighborhood, exact coordinates)
+- **Follow-up Notifications**: How soon after a Quick Entry should follow-up prompts appear to encourage expansion?
+
+## 3. Concept Detection and Tagging
+
+### Questions:
+- **Concept Detection Threshold**: What confidence threshold should trigger automatic concept suggestion?
+- **Maximum Concepts Per Entry**: Is there a limit to how many concepts should be associated with a single entry?
+- **Concept Hierarchy**: How should parent-child relationships between concepts be represented in the tagging interface?
+- **User-Created Concepts**: Should users be able to create custom concepts not in the master concept list?
+- **Concept Weighting**: Should concepts have different weights/importance within an entry?
+
+## 4. Cross-Feature Clipboard Integration
+
+### Questions:
+- **Clipboard Persistence**: How long should items remain in the clipboard before expiring?
+- **Clipboard Capacity**: Is there a limit to how many items can be stored in the clipboard?
+- **Cross-Device Synchronization**: Should the clipboard state sync across user devices in real-time?
+- **Clipboard Organization**: Beyond organizing by source, should there be additional organization options (date, concept, etc.)?
+- **Clipboard Privacy**: Can clipboard items be shared directly, or must they be incorporated into an entry first?
+
+## 5. Template System
+
+### Questions:
+- **Template Creation Permissions**: Should template creation be limited to premium tiers or available to all users?
+- **Template Sharing**: Should users be able to share custom templates with others?
+- **Template Components**: What specific components should templates be able to include? (Pre-filled text, media placeholders, concept tags, etc.)
+- **Template Recommendations**: What factors should influence template recommendations? (Time of day, user history, entry content)
+- **Default Templates**: What specific default templates should be included at launch?
+
+## 6. Multimedia Handling
+
+### Questions:
+- **Storage Allocation**: What storage limits should apply to different subscription tiers?
+- **Media Processing**: Should media be processed on-device or server-side? (Compression, transcoding, etc.)
+- **Media Organization**: Beyond the entry context, how should media be organized for retrieval? (Tags, albums, etc.)
+- **Media Editing**: What in-app editing capabilities should be available for different media types?
+- **Media Sharing**: What options should be available for sharing media from journal entries?
+
+## 7. Premium Feature Boundaries
+
+### Questions:
+- **Tier Structure**: What specific features should be limited to each subscription tier?
+- **Constellation Limitations**: What aspects of constellation mapping should be available in free vs. paid tiers?
+- **Template Limitations**: How many custom templates should be allowed per tier?
+- **Media Limitations**: What media storage limits should apply to each tier?
+- **Sharing Capabilities**: What sharing options should be restricted to premium tiers?
+
+## 8. Accessibility Considerations
+
+### Questions:
+- **Screen Reader Compatibility**: How should the constellation map be made accessible to screen reader users?
+- **Color Blind Support**: What specific color schemes should be used to ensure visibility for color-blind users?
+- **Voice Input Accuracy**: What measures should be taken to improve voice input accuracy for diverse accents and speech patterns?
+- **Keyboard Navigation**: What keyboard shortcuts should be implemented for efficient navigation?
+- **Text Size Adjustments**: How should the interface adapt to very large text sizes for visually impaired users?
+
+## 9. Performance Optimization
+
+### Questions:
+- **Offline Capabilities**: What specific journal functions should work offline?
+- **Sync Behavior**: How should conflicts be resolved when offline entries are synced?
+- **Large Media Handling**: How should the app handle very large media files on devices with limited storage?
+- **Entry Size Limits**: Should there be a maximum size limit for individual entries?
+- **Background Processing**: What processes should be deferred to background processing to maintain UI responsiveness?
+
+## 10. Implementation Phasing
+
+### Questions:
+- **Feature Prioritization**: Which specific features should be prioritized for initial release vs. later phases?
+- **Beta Testing Approach**: What methodology should be used for beta testing the enhanced journal features?
+- **Migration Strategy**: How should existing journal entries be migrated to support new features?
+- **Rollout Strategy**: Should new features be released all at once or gradually with A/B testing?
+- **Success Metrics**: What specific metrics should be used to measure the success of the enhanced journal features?

@@ -1,0 +1,69 @@
+# Quest Feature Refinements Summary
+
+## Key Refinements from Documents
+
+### 1. Skill Tree Design
+- **Removal of AI Companion**: Feature removed as requested while maintaining other design elements
+- **XP System**: 
+  - 10-30 XP per step
+  - 100 XP for quest completion
+  - Introduction of "Wisdom XP" to unlock advanced quests/branches
+- **Visual Progress**: 
+  - Glowing nodes
+  - Wisdom XP bar
+  - Badges for milestones (e.g., "Stoic Novice" at 100 Wisdom XP)
+- **Navigation**: Zoomable interface with thematic visuals (cosmic background)
+- **Animations**: Pulsing nodes and celebratory effects
+- **Challenge Nodes**: Bonus XP for quizzes or reflections
+
+### 2. Concepts Integration
+- **Hyperlinked Concepts**: Nodes link to Concepts via clickable hyperlinks
+- **Related Concepts**: Tooltips showing concept hierarchy
+- **Mastery Progress**: Completing nodes adds to Concept mastery (e.g., 10% to "Stoicism")
+- **Mini-Tree**: Concept family tree visualization
+- **Navigation**: "Back to Quest" button for seamless return from Concepts exploration
+
+### 3. Accessibility Enhancements
+- High-contrast colors
+- Screen reader support
+- Adjustable text sizes
+- Audio narration
+- Voice input for reflections
+- Voice navigation for Concepts exploration
+- Large, tappable areas
+
+### 4. User Flow Refinements
+- **Starting a Quest**:
+  - Browse on QuestScreen
+  - Select and view details on QuestDetailScreen
+  - Start via API
+- **Completing Steps**:
+  - View node content in QuestStep
+  - Submit reflection/answer
+  - Earn XP and view progress
+  - Proceed to next step
+- **Exploring Concepts**:
+  - Tap Concept hyperlink in node content
+  - View Concept Detail page and mini-tree
+  - Explore related Concepts
+  - Return to Quest
+
+### 5. Information Architecture
+- **Sitemap**:
+  - QuestScreen (Quest List, Filters)
+  - QuestDetailScreen (Skill Tree View, Start Button)
+  - QuestStep (Node Content, Concepts Hyperlink, Progress)
+  - Concepts (Linked Feature)
+- **Navigation Pattern**: Bottom tab bar for easy thumb access on mobile devices
+- **Modal Overlay**: QuestStep as modal to maintain focus during quest steps
+
+### 6. Cognitive Load Reductions
+- Auto-applying "Recommended for You" filter based on user progress
+- Pre-filled example responses for reflections
+- Auto-save progress after submission
+- Voice input and navigation options
+
+### 7. Database & API Structure
+- Comprehensive database models for quests and quest steps
+- Complete API endpoints for quest management and progress tracking
+- Integration with XP system and Concepts feature
